@@ -1,6 +1,6 @@
 CFLAGS = -g -Wall -Wextra
 IFLAGS = -Iinclude
-LDFLAGS =
+LDFLAGS = -lncurses
 
 SOURCES = $(wildcard src/*.c)
 HEADERS = $(wildcard include/*.h)
@@ -14,10 +14,10 @@ default : ./main
 	$(CC) $(CFLAGS) $^ $(LDFLAGS) -o $@
 
 obj/%.o : src/%.c $(HEADERS) | obj
-	gcc $(CFLAGS) -fPIC $(IFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -fPIC $(IFLAGS) -c $< -o $@
 
 obj :
 	mkdir -p $@
 
 clean :
-	$(RM) ./main
+	$(RM) $(OBJECTS) ./main
