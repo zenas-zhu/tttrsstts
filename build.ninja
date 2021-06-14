@@ -1,0 +1,16 @@
+cc = clang
+cflags = -g -Wall -Wextra
+iflags = -Iinclude
+ldflags = -lncurses
+
+rule cc
+ command = $cc $cflags $iflags -c $in -o $out
+
+rule ln
+ command = $cc $cflags $in $ldflags -o $out
+
+build ./main: ln obj/main.o obj/field.o
+build obj/main.o: cc src/main.c | include/field.h
+build obj/field.o: cc src/field.c | include/field.h
+
+default ./main
