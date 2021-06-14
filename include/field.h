@@ -4,10 +4,8 @@
 #include <stdbool.h>
 #include <ncurses.h>
 
-struct field_private;
 typedef struct {
 	WINDOW *view;
-	struct field_private *p;
 } field_t;
 
 /*

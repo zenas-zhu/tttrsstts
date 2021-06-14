@@ -11,6 +11,7 @@ int main()
 	curs_set(0);
 	keypad(stdscr, TRUE);
 	field_t *f = create_field();
+	usleep(100000);
 	while (step_field(f)) {
 		usleep(100000);
 	}
