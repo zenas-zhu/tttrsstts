@@ -10,7 +10,7 @@ struct field {
 };
 #define FIELD_CAST(F) ((struct field *)(F))
 
-static void field_show(field_t *field, int x, int y, char *s);
+static void field_show(field_t *field, int y, int x, char *s);
 
 field_t *create_field()
 {
@@ -40,20 +40,31 @@ void destroy_field(field_t *field)
 	free(field);
 }
 
-bool step_field(field_t *field)
+step_result_e step_field(field_t *field)
 {
 	field_show(field, FIELD_CAST(field)->i, 0, "  ");
 	int next_i = FIELD_CAST(field)->i - 1;
-	bool landed = FIELD_CAST(field)->cells[next_i][0];
-	if (!landed) {
+	step_result_e result;
+	if (FIELD_CAST(field)->cells[next_i][0]) {
+		FIELD_CAST(field)->cells[FIELD_CAST(field)->i][0] = true;
+		field_show(field, FIELD_CAST(field)->i, 0, "##");
+		FIELD_CAST(field)->i = 19;
+		if (FIELD_CAST(field)->cells[19][0]) {
+			result = STEP_RESULT_GAMEOVER;
+		} else {
+			field_show(field, FIELD_CAST(field)->i, 0, "[]");
+			result = STEP_RESULT_LANDED;
+		}
+	} else {
 		FIELD_CAST(field)->i = next_i;
+		field_show(field, FIELD_CAST(field)->i, 0, "[]");
+		result = STEP_RESULT_DOWN;
 	}
-	field_show(field, FIELD_CAST(field)->i, 0, landed ? "##" : "[]");
 	wrefresh(field->view);
-	return !landed;
+	return result;
 }
 
-static void field_show(field_t *field, int x, int y, char *s)
+static void field_show(field_t *field, int y, int x, char *s)
 {
-	mvwprintw(field->view, 20 - x, y * 2 + 2, s);
+	mvwprintw(field->view, 20 - y, x * 2 + 2, s);
 }

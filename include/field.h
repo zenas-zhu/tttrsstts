@@ -8,6 +8,12 @@ typedef struct {
 	WINDOW *view;
 } field_t;
 
+typedef enum {
+	STEP_RESULT_DOWN,
+	STEP_RESULT_LANDED,
+	STEP_RESULT_GAMEOVER,
+} step_result_e;
+
 /*
  * create a playfield
  */
@@ -21,6 +27,6 @@ void destroy_field(field_t *field);
 /*
  * simulate one "unit" of play
  */
-bool step_field(field_t *field);
+step_result_e step_field(field_t *field);
 
 #endif

@@ -12,7 +12,7 @@ int main()
 	keypad(stdscr, TRUE);
 	field_t *f = create_field();
 	usleep(100000);
-	while (step_field(f)) {
+	while (step_field(f) != STEP_RESULT_GAMEOVER) {
 		usleep(100000);
 	}
 	wgetch(f->view);
