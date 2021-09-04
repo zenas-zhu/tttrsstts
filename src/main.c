@@ -12,8 +12,18 @@ int main()
 	keypad(stdscr, TRUE);
 	field_t *f = create_field();
 	usleep(100000);
-	while (step_field(f) != STEP_RESULT_GAMEOVER) {
-		usleep(100000);
+	step_result_e result = step_field(f, STEP_TYPE_DOWN);
+	while (result != STEP_RESULT_GAMEOVER) {
+		int x = rand() % 10;
+		if (x < 2) {
+			usleep(50000);
+			result = step_field(f, x ? STEP_TYPE_LEFT : STEP_TYPE_RIGHT);
+			usleep(50000);
+			result = step_field(f, STEP_TYPE_DOWN);
+		} else {
+			usleep(100000);
+			result = step_field(f, STEP_TYPE_DOWN);
+		}
 	}
 	wgetch(f->view);
 	destroy_field(f);
