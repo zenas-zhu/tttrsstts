@@ -4,38 +4,42 @@
 #include <stdbool.h>
 #include <ncurses.h>
 
-typedef struct {
-	WINDOW *view;
-} field_t;
+typedef struct field_ Field;
 
+/*
+ * types of movements that can change a playfield
+ */
 typedef enum {
 	STEP_TYPE_DOWN,
 	STEP_TYPE_LEFT,
 	STEP_TYPE_RIGHT,
 	STEP_TYPE_CW,
 	STEP_TYPE_CCW,
-} step_type_e;
+} Step_type;
 
+/*
+ * types of changes that can happen to a playfield
+ */
 typedef enum {
 	STEP_RESULT_DOWN,
 	STEP_RESULT_NOTHING,
 	STEP_RESULT_LANDED,
 	STEP_RESULT_GAMEOVER,
-} step_result_e;
+} Step_result;
 
 /*
  * create a playfield
  */
-field_t *create_field();
+Field *field_create();
 
 /*
  * destroy a playfield
  */
-void destroy_field(field_t *field);
+void field_destroy(Field *field);
 
 /*
  * simulate one "unit" of play
  */
-step_result_e step_field(field_t *field, step_type_e type);
+Step_result field_step(Field *field, Step_type type);
 
 #endif
