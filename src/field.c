@@ -20,7 +20,7 @@ Field *field_create()
 	box(field->view, 0, 0);
 	srand(0);
 	for (int i = 0; i < 10; i++) {
-		int height = rand() % 4;
+		int height = rand() % 4 + 12;
 		for (int j = 0; j < 40; j++) {
 			bool occupied = j < height;
 			field->cells[j][i] = occupied;
@@ -44,35 +44,50 @@ void field_destroy(Field *field)
 
 Step_result field_step(Field *field, Step_type type)
 {
-	field_show(field, field->i, field->j, "  ");
 	int next_i = field->i, next_j = field->j;
 	switch (type)
 	{
 		case STEP_TYPE_DOWN: next_i -= 1; break;
 		case STEP_TYPE_LEFT: next_j -= 1; break;
 		case STEP_TYPE_RIGHT: next_j += 1; break;
+		case STEP_TYPE_LOCK:
+			while (!field_occupied(field, next_i - 1, next_j)) {
+				next_i -= 1;
+			}
+			break;
+		case STEP_TYPE_APPEAR:
+			next_i = 19;
+			next_j = 4;
+			break;
+		default: ;
 	}
 	Step_result result;
-	if (field_occupied(field, next_i, next_j)) {
-		if (type == STEP_TYPE_DOWN) {
-			field->cells[field->i][field->j] = true;
-			field_show(field, field->i, field->j, "##");
+	if (type == STEP_TYPE_LOCK) {
+		field->cells[next_i][next_j] = true;
+		field_show(field, field->i, field->j, "  ");
+		field_show(field, next_i, next_j, "##");
+		result = STEP_RESULT_LOCKED;
+	} else if (type == STEP_TYPE_APPEAR) {
+		if (field->cells[19][4]) {
+			result = STEP_RESULT_GAMEOVER;
+		} else {
 			field->i = 19;
 			field->j = 4;
-			if (field->cells[19][4]) {
-				result = STEP_RESULT_GAMEOVER;
-			} else {
-				field_show(field, 19, 4, "[]");
-				result = STEP_RESULT_LANDED;
-			}
+			field_show(field, 19, 4, "[]");
+			result = STEP_RESULT_MOVED;
+		}
+	} else if (field_occupied(field, next_i, next_j)) {
+		if (type == STEP_TYPE_DOWN) {
+			result = STEP_RESULT_LANDED;
 		} else {
 			result = STEP_RESULT_NOTHING;
 		}
 	} else {
+		field_show(field, field->i, field->j, "  ");
+		field_show(field, next_i, next_j, "[]");
 		field->i = next_i;
 		field->j = next_j;
-		field_show(field, next_i, next_j, "[]");
-		result = STEP_RESULT_DOWN;
+		result = STEP_RESULT_MOVED;
 	}
 	wrefresh(field->view);
 	return result;
