@@ -6,6 +6,7 @@
 
 int main()
 {
+	srand(0);
 	initscr();
 	// raw();
 	noecho();
@@ -13,7 +14,7 @@ int main()
 	keypad(stdscr, TRUE);
 	Field *f = field_create();
 	usleep(100000);
-	Step_result result = field_step(f, STEP_TYPE_DOWN);
+	Step_result result = field_step(f, STEP_TYPE_APPEAR);
 	while (result != STEP_RESULT_GAMEOVER) {
 		int x = rand() % 10;
 		if (x > 8) {

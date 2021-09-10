@@ -1,9 +1,6 @@
 #ifndef FIELD_H
 #define FIELD_H
 
-#include <stdbool.h>
-#include <ncurses.h>
-
 typedef struct field_ Field;
 
 /*
