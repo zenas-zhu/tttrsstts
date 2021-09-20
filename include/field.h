@@ -1,6 +1,8 @@
 #ifndef FIELD_H
 #define FIELD_H
 
+#include "updates.h"
+
 typedef struct field_ Field;
 
 /*
@@ -31,7 +33,7 @@ typedef enum {
 /*
  * create a playfield
  */
-Field *field_create();
+Field *field_create(Updates *updates);
 
 /*
  * destroy a playfield
@@ -41,6 +43,6 @@ void field_destroy(Field *field);
 /*
  * simulate one "unit" of play
  */
-Step_result field_step(Field *field, Step_type type);
+Step_result field_step(Field *field, Step_type type, Updates *updates);
 
 #endif
