@@ -6,21 +6,6 @@
 /*
  * actions that the client will be required to perform
  */
-typedef struct {
-	enum {
-		UPDATE_NONE,
-		UPDATE_DRAW_CELL,
-		// UPDATE_GET_KEY,
-	} update_type;
-	union {
-		struct {
-			int draw_cell_r;
-			int draw_cell_c;
-			int draw_cell_color;
-		};
-	};
-} Update;
-
 typedef struct updates_ Updates;
 
 /*
@@ -34,18 +19,13 @@ Updates *updates_create();
 void updates_destroy(Updates *updates);
 
 /*
- * add an update to the queue
+ * queues a draw cell update
  */
-void updates_add(Updates *updates, Update u);
+void updates_queue_draw(Updates *updates, int r, int c, int color);
 
 /*
- * remove an update from the queue
+ * executes all the draw updates through the callback
  */
-Update updates_remove(Updates *updates);
-
-/*
- * is there an update in the queue?
- */
-bool updates_available(Updates *updates);
+void updates_do_draw(Updates *updates, void (*drawer)(void *ctx, int r, int c, int color), void *ctx);
 
 #endif

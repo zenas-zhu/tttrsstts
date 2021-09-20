@@ -5,7 +5,7 @@
 #include "field.h"
 #include "updates.h"
 
-void do_updates(Updates *updates, WINDOW *win);
+void drawer(void *ctx, int r, int c, int color);
 
 int main()
 {
@@ -21,35 +21,35 @@ int main()
 	Field *f = field_create(u);
 	usleep(100000);
 	Step_result result = field_step(f, STEP_TYPE_APPEAR, u);
-	do_updates(u, win);
+	updates_do_draw(u, drawer, win);
 	while (result != STEP_RESULT_GAMEOVER) {
 		int x = rand() % 10;
 		if (x > 8) {
 			usleep(100000);
 			result = field_step(f, STEP_TYPE_LOCK, u);
-			do_updates(u, win);
+			updates_do_draw(u, drawer, win);
 			usleep(500000);
 			result = field_step(f, STEP_TYPE_APPEAR, u);
-			do_updates(u, win);
+			updates_do_draw(u, drawer, win);
 		} else if (x < 2) {
 			usleep(50000);
 			result = field_step(f, x ? STEP_TYPE_LEFT : STEP_TYPE_RIGHT, u);
-			do_updates(u, win);
+			updates_do_draw(u, drawer, win);
 			usleep(50000);
 			result = field_step(f, STEP_TYPE_DOWN, u);
-			do_updates(u, win);
+			updates_do_draw(u, drawer, win);
 		} else {
 			usleep(100000);
 			result = field_step(f, STEP_TYPE_DOWN, u);
-			do_updates(u, win);
+			updates_do_draw(u, drawer, win);
 		}
 		if (result == STEP_RESULT_LANDED) {
 			usleep(500000);
 			result = field_step(f, STEP_TYPE_LOCK, u);
-			do_updates(u, win);
+			updates_do_draw(u, drawer, win);
 			usleep(500000);
 			result = field_step(f, STEP_TYPE_APPEAR, u);
-			do_updates(u, win);
+			updates_do_draw(u, drawer, win);
 		}
 	}
 	field_destroy(f);
@@ -57,15 +57,10 @@ int main()
 	endwin();
 }
 
-void do_updates(Updates *updates, WINDOW *win)
+void drawer(void *ctx, int r, int c, int color)
 {
-	while (updates_available(updates)) {
-		Update u = updates_remove(updates);
-		if (u.update_type == UPDATE_DRAW_CELL) {
-			char *draw_texts[3] = {"  ", "[]", "##"};
-			char *draw_text = draw_texts[u.draw_cell_color];
-			mvwprintw(win, 20 - u.draw_cell_r, u.draw_cell_c * 2 + 2, draw_text);
-		}
-	}
-	wrefresh(win);
+	char *draw_texts[3] = {"  ", "[]", "##"};
+	char *draw_text = draw_texts[color];
+	mvwprintw((WINDOW *)ctx, 20 - r, c * 2 + 2, draw_text);
+	wrefresh((WINDOW *)ctx); // too many refreshes ik
 }

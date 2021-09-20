@@ -5,9 +5,10 @@
 #define UPDATES_SIZE 256
 
 struct updates_ {
-	size_t i0; // start
-	size_t n; // size
-	Update *v;
+	struct {
+		size_t n;
+		int *v;
+	} draw_cell;
 };
 
 // TODO: this is incorrect in the case of many updates
@@ -15,36 +16,33 @@ struct updates_ {
 Updates *updates_create()
 {
 	Updates *updates = malloc(sizeof(Updates));
-	updates->i0 = 0;
-	updates->n = 0;
-	updates->v = malloc(sizeof(Update) * UPDATES_SIZE);
+	updates->draw_cell.n = 0;
+	updates->draw_cell.v = malloc(sizeof(int) * 3 * UPDATES_SIZE);
 	return updates;
 }
 
 void updates_destroy(Updates *updates)
 {
-	free(updates->v);
+	free(updates->draw_cell.v);
 	free(updates);
 }
 
-void updates_add(Updates *updates, Update u)
+void updates_queue_draw(Updates *updates, int r, int c, int color)
 {
-	updates->v[(updates->i0 + updates->n) % UPDATES_SIZE] = u;
-	updates->n += 1;
+	size_t i = updates->draw_cell.n;
+	updates->draw_cell.v[i * 3] = r;
+	updates->draw_cell.v[i * 3 + 1] = c;
+	updates->draw_cell.v[i * 3 + 2] = color;
+	updates->draw_cell.n += 1;
 }
 
-Update updates_remove(Updates *updates)
+void updates_do_draw(Updates *updates, void (*drawer)(void *ctx, int r, int c, int color), void *ctx)
 {
-	if (!updates_available(updates)) {
-		return (Update){.update_type = UPDATE_NONE};
+	for (size_t i = 0; i < updates->draw_cell.n; i++) {
+		drawer(ctx,
+				updates->draw_cell.v[i * 3],
+				updates->draw_cell.v[i * 3 + 1],
+				updates->draw_cell.v[i * 3 + 2]);
 	}
-	Update u = updates->v[updates->i0 % UPDATES_SIZE];
-	updates->n -= 1;
-	updates->i0 += 1;
-	return u;
-}
-
-bool updates_available(Updates *updates)
-{
-	return updates->n > 0;
+	updates->draw_cell.n = 0;
 }

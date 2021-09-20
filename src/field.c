@@ -13,7 +13,6 @@ struct field_ {
 #define SPAWN_C 4
 
 static bool field_occupied(Field *field, int r, int c);
-static void field_draw(int r, int c, int l, Updates *updates);
 
 Field *field_create(Updates *updates)
 {
@@ -24,7 +23,7 @@ Field *field_create(Updates *updates)
 			bool occupied = r < height;
 			field->cells[r][c] = occupied;
 			if (r < 20) {
-				field_draw(r, c, occupied ? 2 : 0, updates);
+				updates_queue_draw(updates, r, c, occupied ? 2 : 0);
 			}
 		}
 	}
@@ -58,8 +57,8 @@ Step_result field_step(Field *field, Step_type type, Updates *updates)
 	Step_result result;
 	if (type == STEP_TYPE_LOCK) {
 		field->cells[next_r][next_c] = true;
-		field_draw(field->piece_r, field->piece_c, 0, updates);
-		field_draw(next_r, next_c, 2, updates);
+		updates_queue_draw(updates, field->piece_r, field->piece_c, 0);
+		updates_queue_draw(updates, next_r, next_c, 2);
 		result = STEP_RESULT_LOCKED;
 	} else if (type == STEP_TYPE_APPEAR) {
 		if (field->cells[next_r][next_c]) {
@@ -67,7 +66,7 @@ Step_result field_step(Field *field, Step_type type, Updates *updates)
 		} else {
 			field->piece_r = next_r;
 			field->piece_c = next_c;
-			field_draw(next_r, next_c, 1, updates);
+			updates_queue_draw(updates, next_r, next_c, 1);
 			result = STEP_RESULT_MOVED;
 		}
 	} else if (field_occupied(field, next_r, next_c)) {
@@ -77,8 +76,8 @@ Step_result field_step(Field *field, Step_type type, Updates *updates)
 			result = STEP_RESULT_NOTHING;
 		}
 	} else {
-		field_draw(field->piece_r, field->piece_c, 0, updates);
-		field_draw(next_r, next_c, 1, updates);
+		updates_queue_draw(updates, field->piece_r, field->piece_c, 0);
+		updates_queue_draw(updates, next_r, next_c, 1);
 		field->piece_r = next_r;
 		field->piece_c = next_c;
 		result = STEP_RESULT_MOVED;
@@ -89,19 +88,4 @@ Step_result field_step(Field *field, Step_type type, Updates *updates)
 static bool field_occupied(Field *field, int r, int c)
 {
 	return (r < 0) || (c < 0) || (c > 10) || field->cells[r][c];
-}
-
-static void field_draw(int r, int c, int l, Updates *updates)
-{
-	Update u;
-	u.update_type = UPDATE_DRAW_CELL;
-	u.draw_cell_r = r;
-	u.draw_cell_c = c;
-	u.draw_cell_color = l;
-	updates_add(updates, u);
-	/* updates_add(updates, (Update){
-		.update_type = UPDATE_DRAW_CELL,
-		.draw_cell_r = r,
-		.draw_cell_c = c,
-		.draw_cell_color = l}); */
 }
