@@ -9,6 +9,7 @@ struct updates_ {
 		size_t n;
 		int *v;
 	} draw_cell;
+	long timeout;
 };
 
 // TODO: this is incorrect in the case of many updates
@@ -45,4 +46,14 @@ void updates_do_draw(Updates *updates, void (*drawer)(void *ctx, int r, int c, i
 				updates->draw_cell.v[i * 3 + 2]);
 	}
 	updates->draw_cell.n = 0;
+}
+
+void updates_set_timeout(Updates *updates, long timeout)
+{
+	updates->timeout = timeout;
+}
+
+long updates_get_timeout(Updates *updates)
+{
+	return updates->timeout;
 }

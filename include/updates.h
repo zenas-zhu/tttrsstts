@@ -28,4 +28,14 @@ void updates_queue_draw(Updates *updates, int r, int c, int color);
  */
 void updates_do_draw(Updates *updates, void (*drawer)(void *ctx, int r, int c, int color), void *ctx);
 
+/*
+ * sets max amount of time (ms) before the game should be polled again
+ */
+void updates_set_timeout(Updates *updates, long timeout);
+
+/*
+ * gets max amount of time (ms) before polling the game again
+ */
+long updates_get_timeout(Updates *updates);
+
 #endif

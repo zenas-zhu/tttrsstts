@@ -33,7 +33,7 @@ typedef enum {
 /*
  * create a playfield
  */
-Field *field_create(Updates *updates);
+Field *field_create();
 
 /*
  * destroy a playfield

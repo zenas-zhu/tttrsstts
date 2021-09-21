@@ -9,9 +9,10 @@ rule cc
 rule ln
  command = $cc $cflags $in $ldflags -o $out
 
-build ./main: ln obj/main.o obj/field.o obj/updates.o
-build obj/main.o: cc src/main.c | include/field.h include/updates.h
+build ./main: ln obj/main.o obj/field.o obj/updates.o obj/game.o
+build obj/main.o: cc src/main.c | include/updates.h include/game.h
 build obj/field.o: cc src/field.c | include/field.h include/updates.h
 build obj/updates.o: cc src/updates.c | include/updates.h
+build obj/game.o: cc src/game.c | include/field.h include/updates.h include/game.h
 
 default ./main

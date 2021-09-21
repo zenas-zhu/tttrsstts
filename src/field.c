@@ -14,18 +14,11 @@ struct field_ {
 
 static bool field_occupied(Field *field, int r, int c);
 
-Field *field_create(Updates *updates)
+Field *field_create()
 {
 	Field *field = malloc(sizeof(Field));
-	for (int c = 0; c < 10; c++) {
-		int height = rand() % 4 + 12;
-		for (int r = 0; r < 40; r++) {
-			bool occupied = r < height;
-			field->cells[r][c] = occupied;
-			if (r < 20) {
-				updates_queue_draw(updates, r, c, occupied ? 2 : 0);
-			}
-		}
+	for (int i = 0; i < 400; i++) {
+		field->cells[0][i] = false;
 	}
 	return field;
 }
@@ -87,5 +80,5 @@ Step_result field_step(Field *field, Step_type type, Updates *updates)
 
 static bool field_occupied(Field *field, int r, int c)
 {
-	return (r < 0) || (c < 0) || (c > 10) || field->cells[r][c];
+	return (r < 0) || (c < 0) || (c >= 10) || field->cells[r][c];
 }
