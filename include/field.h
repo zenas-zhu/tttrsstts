@@ -5,19 +5,40 @@
 
 typedef struct field_ Field;
 
+typedef struct piece_table_ Piece_table;
+typedef struct kick_table_ Kick_table;
+
 /*
  * types of movements that can change a playfield
  */
 typedef enum {
 	STEP_TYPE_DOWN,
-	STEP_TYPE_LEFT,
-	STEP_TYPE_RIGHT,
-	// STEP_TYPE_CW,
-	// STEP_TYPE_CCW,
+	STEP_TYPE_MOVE,
+	STEP_TYPE_ROTATE,
 	STEP_TYPE_LOCK,
 	// STEP_TYPE_CLEAR, // clear lines that have been filled by a locked piece
 	STEP_TYPE_APPEAR, // spawn the next piece
 } Step_type;
+
+/*
+ * movements that can change a playfield, i.e. step type with associated data
+ */
+typedef struct {
+	Step_type t;
+	union {
+		struct {
+			int movedir; // 1: right, -1: left
+		};
+		struct {
+			int rotdir; // 0: nop (?), 1: cw, 2: 180, 3: ccw
+			Kick_table *kick_table;
+		};
+		struct {
+			Piece_table *piece_table;
+			int appear_piece;
+		};
+	};
+} Step;
 
 /*
  * types of changes that can happen to a playfield
@@ -43,6 +64,6 @@ void field_destroy(Field *field);
 /*
  * simulate one "unit" of play
  */
-Step_result field_step(Field *field, Step_type type, Updates *updates);
+Step_result field_step(Field *field, Step step, Updates *updates);
 
 #endif

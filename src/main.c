@@ -31,6 +31,7 @@ int main()
 			case KEY_UP: key = 1; break;
 			case KEY_LEFT: key = 2; break;
 			case KEY_RIGHT: key = 3; break;
+			case 'a': case 'e': key = 4; break;
 		}
 		result = game_tick(g, key, u);
 	}

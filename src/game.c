@@ -23,8 +23,10 @@ void game_destroy(Game *game)
 
 bool game_tick(Game *game, int key, Updates *updates)
 {
+	Step step;
 	if (!game->started) {
-		field_step(game->field, STEP_TYPE_APPEAR, updates);
+		step.t = STEP_TYPE_APPEAR;
+		field_step(game->field, step, updates);
 		updates_set_timeout(updates, 100);
 		game->started = true;
 		return true;
@@ -33,19 +35,27 @@ bool game_tick(Game *game, int key, Updates *updates)
 		case -1: // timed out, whatvere
 			break;
 		case 0:
-			field_step(game->field, STEP_TYPE_DOWN, updates);
+			step.t = STEP_TYPE_DOWN;
+			field_step(game->field, step, updates);
 			break;
 		case 1:
-			field_step(game->field, STEP_TYPE_LOCK, updates);
-			if (field_step(game->field, STEP_TYPE_APPEAR, updates) == STEP_RESULT_GAMEOVER) {
+			step.t = STEP_TYPE_LOCK;
+			field_step(game->field, step, updates);
+			step.t = STEP_TYPE_APPEAR;
+			if (field_step(game->field, step, updates) == STEP_RESULT_GAMEOVER) {
 				return false;
 			}
 			break;
 		case 2:
-			field_step(game->field, STEP_TYPE_LEFT, updates);
-			break;
 		case 3:
-			field_step(game->field, STEP_TYPE_RIGHT, updates);
+			step.t = STEP_TYPE_MOVE;
+			step.movedir = key * 2 - 5;
+			field_step(game->field, step, updates);
+			break;
+		case 4:
+			step.t = STEP_TYPE_ROTATE;
+			step.rotdir = 1;
+			field_step(game->field, step, updates);
 			break;
 	}
 	return true;
