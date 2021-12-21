@@ -26,23 +26,24 @@ bool game_tick(Game *game, int key, Updates *updates)
 	Step step;
 	if (!game->started) {
 		step.t = STEP_TYPE_APPEAR;
-		field_step(game->field, step, updates);
+		Step_result r = field_step(game->field, step);
+		updates_set_board(updates, r.board);
 		updates_set_timeout(updates, 100);
 		game->started = true;
 		return true;
 	}
 	switch (key) {
 		case -1: // timed out, whatvere
-			break;
+			// break;
 		case 0:
 			step.t = STEP_TYPE_DOWN;
-			field_step(game->field, step, updates);
+			field_step(game->field, step);
 			break;
 		case 1:
 			step.t = STEP_TYPE_LOCK;
-			field_step(game->field, step, updates);
+			field_step(game->field, step);
 			step.t = STEP_TYPE_APPEAR;
-			if (field_step(game->field, step, updates) == STEP_RESULT_GAMEOVER) {
+			if (field_step(game->field, step).t == STEP_RESULT_GAMEOVER) {
 				return false;
 			}
 			break;
@@ -50,12 +51,12 @@ bool game_tick(Game *game, int key, Updates *updates)
 		case 3:
 			step.t = STEP_TYPE_MOVE;
 			step.movedir = key * 2 - 5;
-			field_step(game->field, step, updates);
+			field_step(game->field, step);
 			break;
 		case 4:
 			step.t = STEP_TYPE_ROTATE;
 			step.rotdir = 1;
-			field_step(game->field, step, updates);
+			field_step(game->field, step);
 			break;
 	}
 	return true;

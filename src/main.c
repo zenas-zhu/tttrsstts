@@ -20,10 +20,18 @@ int main()
 	Updates *u = updates_create();
 	Game *g = game_create();
 	bool result = game_tick(g, -1, u);
+	int *board = updates_get_board(u);
 	while (result) {
-		updates_do_draw(u, drawer, win);
+		for (int i = 0; i < 200; i++) {
+			static char *draw_texts[3] = {"  ", "##", "[]"};
+			char *draw_text = draw_texts[board[i]];
+			if (i % 10 == 0) {
+				wmove(win, 20 - i / 10, 1);
+			}
+			wprintw(win, draw_text);
+		}
 		wrefresh(win);
-		// wtimeout(win, updates_get_timeout(u));
+		wtimeout(win, updates_get_timeout(u));
 		int key_raw = wgetch(win);
 		int key = -1; // TODO: unknown keys treated as key timeout
 		switch (key_raw) {
@@ -31,18 +39,11 @@ int main()
 			case KEY_UP: key = 1; break;
 			case KEY_LEFT: key = 2; break;
 			case KEY_RIGHT: key = 3; break;
-			case 'a': case 'e': key = 4; break;
+			case 'o': case 'u': key = 4; break;
 		}
 		result = game_tick(g, key, u);
 	}
 	game_destroy(g);
 	updates_destroy(u);
 	endwin();
-}
-
-void drawer(void *ctx, int r, int c, int color)
-{
-	char *draw_texts[3] = {"  ", "[]", "##"};
-	char *draw_text = draw_texts[color];
-	mvwprintw((WINDOW *)ctx, 20 - r, c * 2 + 2, draw_text);
 }

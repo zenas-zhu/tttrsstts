@@ -9,32 +9,32 @@
 typedef struct updates_ Updates;
 
 /*
- * create an update queue
+ * create an update packet
  */
 Updates *updates_create();
 
 /*
- * destroy an update queue
+ * destroy an update packet
  */
 void updates_destroy(Updates *updates);
 
 /*
- * queues a draw cell update
+ * record the handle to the board state
  */
-void updates_queue_draw(Updates *updates, int r, int c, int color);
+void updates_set_board(Updates *updates, int *board);
 
 /*
- * executes all the draw updates through the callback
+ * retrieve the handle to the board state
  */
-void updates_do_draw(Updates *updates, void (*drawer)(void *ctx, int r, int c, int color), void *ctx);
+int *updates_get_board(Updates *updates);
 
 /*
- * sets max amount of time (ms) before the game should be polled again
+ * set max amount of time (ms) before the game should be polled again
  */
 void updates_set_timeout(Updates *updates, long timeout);
 
 /*
- * gets max amount of time (ms) before polling the game again
+ * get max amount of time (ms) before polling the game again
  */
 long updates_get_timeout(Updates *updates);
 
