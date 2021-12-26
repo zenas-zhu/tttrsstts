@@ -1,8 +1,6 @@
 #ifndef UPDATES_H
 #define UPDATES_H
 
-#include <stdbool.h>
-
 /*
  * actions that the client will be required to perform
  */

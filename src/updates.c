@@ -1,15 +1,10 @@
 #include <stdlib.h>
-#include <stddef.h>
 #include "updates.h"
-
-#define UPDATES_SIZE 256
 
 struct updates_ {
 	int *board;
 	long timeout;
 };
-
-// TODO: this is incorrect in the case of many updates
 
 Updates *updates_create()
 {
