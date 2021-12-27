@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include "updates.h"
+#include "inputs.h"
 
 /*
  * the state of a game
@@ -23,6 +24,6 @@ void game_destroy(Game *game);
  * change a game state
  * returns false iff the game has ended
  */
-bool game_tick(Game *game, int key, Updates *updates);
+bool game_tick(Game *game, Inputs *inputs, Updates *updates);
 
 #endif
