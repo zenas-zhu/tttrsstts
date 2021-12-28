@@ -24,6 +24,12 @@ typedef struct {
 	};
 } Step;
 
+#define STEP_DOWN ((Step){ .t = STEP_TYPE_DOWN })
+#define STEP_MOVE(m) ((Step){ .t = STEP_TYPE_MOVE, .movedir = m })
+#define STEP_ROTATE(r) ((Step){ .t = STEP_TYPE_ROTATE, .rotdir = r })
+#define STEP_LOCK ((Step){ .t = STEP_TYPE_LOCK })
+#define STEP_APPEAR ((Step){ .t = STEP_TYPE_APPEAR })
+
 /*
  * types of changes that can happen to a playfield
  */
