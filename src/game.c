@@ -57,18 +57,18 @@ bool game_tick(Game *game, Inputs *inputs, Updates *updates)
 	}
 	if (d == 1) {
 		Step_result r = field_step(game->field, STEP_DOWN);
-		if (r.t == STEP_RESULT_MOVED) {
+		if (r.t == STEP_RESULT_TYPE_MOVED) {
 			game->drop_timer = DROP_MILLIS;
 		}
 	} else if (timedout && !game->landed) {
 		Step_result r = field_step(game->field, STEP_DOWN);
-		if (r.t == STEP_RESULT_LANDED) {
+		if (r.t == STEP_RESULT_TYPE_LANDED) {
 			game->landed = true;
 		}
 	} else if (d == 2 || (timedout && game->landed)) {
 		field_step(game->field, STEP_LOCK);
 		Step_result r = field_step(game->field, STEP_APPEAR);
-		if (r.t == STEP_RESULT_GAMEOVER) {
+		if (r.t == STEP_RESULT_TYPE_GAMEOVER) {
 			return false;
 		}
 		game->landed = false;

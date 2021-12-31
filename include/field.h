@@ -18,7 +18,7 @@ typedef struct {
 		STEP_TYPE_APPEAR, // spawn the next piece
 	} t;
 	union {
-		int movedir; // 1: right, -1: left
+		int movedir; // +1: right, -1: left
 		int rotdir; // 0: nop (?), 1: cw, 2: 180, 3: ccw
 		int appear_piece;
 	};
@@ -35,16 +35,24 @@ typedef struct {
  */
 typedef struct {
 	enum {
-		STEP_RESULT_MOVED,
-		STEP_RESULT_NOTHING,
-		STEP_RESULT_LANDED, // attempted & failed to STEP_TYPE_DOWN a piece into the ground
-		STEP_RESULT_LOCKED, // the piece became part of the playfield
-		STEP_RESULT_GAMEOVER,
+		STEP_RESULT_TYPE_NOTHING,
+		STEP_RESULT_TYPE_MOVED,
+		STEP_RESULT_TYPE_LANDED, // attempted & failed to STEP_DOWN a piece into the ground
+		STEP_RESULT_TYPE_LOCKED, // the piece became part of the playfield
+		STEP_RESULT_TYPE_APPEARED,
+		STEP_RESULT_TYPE_GAMEOVER,
 	} t;
 	union {
 		int *board;
 	};
 } Step_result;
+
+#define STEP_RESULT_NOTHING ((Step_result){ .t = STEP_RESULT_TYPE_NOTHING })
+#define STEP_RESULT_MOVED ((Step_result){ .t = STEP_RESULT_TYPE_MOVED })
+#define STEP_RESULT_LANDED ((Step_result){ .t = STEP_RESULT_TYPE_LANDED })
+#define STEP_RESULT_LOCKED ((Step_result){ .t = STEP_RESULT_TYPE_LOCKED })
+#define STEP_RESULT_APPEARED(b) ((Step_result){ .t = STEP_RESULT_TYPE_APPEARED, .board = b })
+#define STEP_RESULT_GAMEOVER(b) ((Step_result){ .t = STEP_RESULT_TYPE_GAMEOVER, .board = b })
 
 /*
  * create a playfield
