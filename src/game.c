@@ -39,23 +39,22 @@ bool game_tick(Game *game, Inputs *inputs, Updates *updates)
 	}
 	game->drop_timer -= inputs_get_millis(inputs);
 	bool timedout = (game->drop_timer <= 0);
-	int d = 0;
-	switch (inputs_get_action(inputs)) {
+	bool stallable = true;
+	Action action = inputs_get_action(inputs);
+	switch (action) {
 		case ACTION_LEFT:  field_step(game->field, STEP_MOVE(-1));  break;
 		case ACTION_RIGHT: field_step(game->field, STEP_MOVE(+1));  break;
 		case ACTION_CW:    field_step(game->field, STEP_ROTATE(1)); break;
 		case ACTION_180:   field_step(game->field, STEP_ROTATE(2)); break;
 		case ACTION_CCW:   field_step(game->field, STEP_ROTATE(3)); break;
-		case ACTION_NONE:      d = -1; break;
-		case ACTION_SOFT_DROP: d = 1; break;
-		case ACTION_HARD_DROP: d = 2; break;
+		default: stallable = false;
 	}
-	if (!d && game->landed) { // move or rotate
+	if (stallable && game->landed) { // move or rotate
 		// reset landed state
 		game->drop_timer = DROP_MILLIS;
 		game->landed = false;
 	}
-	if (d == 1) {
+	if (action == ACTION_SOFT_DROP) {
 		Step_result r = field_step(game->field, STEP_DOWN);
 		if (r.t == STEP_RESULT_TYPE_MOVED) {
 			game->drop_timer = DROP_MILLIS;
@@ -65,7 +64,7 @@ bool game_tick(Game *game, Inputs *inputs, Updates *updates)
 		if (r.t == STEP_RESULT_TYPE_LANDED) {
 			game->landed = true;
 		}
-	} else if (d == 2 || (timedout && game->landed)) {
+	} else if (action == ACTION_HARD_DROP || (timedout && game->landed)) {
 		field_step(game->field, STEP_LOCK);
 		Step_result r = field_step(game->field, STEP_APPEAR);
 		if (r.t == STEP_RESULT_TYPE_GAMEOVER) {
@@ -73,7 +72,7 @@ bool game_tick(Game *game, Inputs *inputs, Updates *updates)
 		}
 		game->landed = false;
 	}
-	if (d == 2 || timedout) {
+	if (action == ACTION_HARD_DROP || timedout) {
 		game->drop_timer = DROP_MILLIS;
 	}
 	updates_set_timeout(updates, game->drop_timer);

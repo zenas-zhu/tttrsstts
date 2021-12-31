@@ -5,8 +5,6 @@
 #include "inputs.h"
 #include "game.h"
 
-void drawer(void *ctx, int r, int c, int color);
-
 int main()
 {
 	initscr();
@@ -14,7 +12,7 @@ int main()
 	cbreak();
 	noecho();
 	curs_set(0);
-	WINDOW *win = newwin(22, 24, 0, 0);
+	WINDOW *win = newwin(22, 22, 0, 0);
 	keypad(win, TRUE);
 	box(win, 0, 0);
 	Updates *u = updates_create();
@@ -52,5 +50,13 @@ int main()
 	game_destroy(g);
 	updates_destroy(u);
 	inputs_destroy(p);
+	{
+		WINDOW *gameover = subwin(win, 3, 16, 9, 3);
+		box(gameover, 0, 0);
+		mvwprintw(gameover, 1, 2, "game over :(");
+		wgetch(gameover);
+		delwin(gameover);
+	}
+	delwin(win);
 	endwin();
 }
