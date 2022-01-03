@@ -66,6 +66,7 @@ bool game_tick(Game *game, Inputs *inputs, Updates *updates)
 		}
 	} else if (action == ACTION_HARD_DROP || (timedout && game->landed)) {
 		field_step(game->field, STEP_LOCK);
+		field_step(game->field, STEP_CLEAR);
 		Step_result r = field_step(game->field, STEP_APPEAR);
 		if (r.t == STEP_RESULT_TYPE_GAMEOVER) {
 			return false;

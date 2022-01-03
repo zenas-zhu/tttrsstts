@@ -59,6 +59,7 @@ Step_result field_step(Field *field, Step step)
 				next_r -= 1;
 			}
 			break;
+		case STEP_TYPE_CLEAR: break;
 		case STEP_TYPE_APPEAR:
 			next_r = SPAWN_R;
 			next_c = SPAWN_C;
@@ -72,6 +73,32 @@ Step_result field_step(Field *field, Step step)
 		field_minos_do(field->piece_r, field->piece_c, field->piece_o, docellclear, field);
 		field_minos_do(next_r, next_c, next_o, docellfill, field);
 		result = STEP_RESULT_LOCKED;
+	} else if (step.t == STEP_TYPE_CLEAR) {
+		int src = 0, dst = 0;
+		while (dst < 40) {
+			if (src == 40) {
+				for (int c = 0; c < 10; c++) {
+					field->cells[dst][c] = 0;
+				}
+				dst += 1;
+			} else {
+				bool clear = true;
+				for (int c = 0; c < 10; c++) {
+					if (field->cells[src][c] != 1) {
+						clear = false;
+						break;
+					}
+				}
+				if (!clear) {
+					for (int c = 0; c < 10; c++) {
+						field->cells[dst][c] = field->cells[src][c];
+					}
+					dst += 1;
+				}
+				src += 1;
+			}
+		}
+		result = STEP_RESULT_CLEARED;
 	} else if (step.t == STEP_TYPE_APPEAR) {
 		bool gameover = field_piece_blocked(field, next_r, next_c, next_o);
 		field_minos_do(next_r, next_c, next_o, docellhi, field);
