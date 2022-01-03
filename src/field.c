@@ -73,10 +73,11 @@ Step_result field_step(Field *field, Step step)
 		field_minos_do(next_r, next_c, next_o, docellfill, field);
 		result = STEP_RESULT_LOCKED;
 	} else if (step.t == STEP_TYPE_APPEAR) {
-		if (field_piece_blocked(field, next_r, next_c, next_o)) {
+		bool gameover = field_piece_blocked(field, next_r, next_c, next_o);
+		field_minos_do(next_r, next_c, next_o, docellhi, field);
+		if (gameover) {
 			result = STEP_RESULT_GAMEOVER((int *)field->cells);
 		} else {
-			field_minos_do(next_r, next_c, next_o, docellhi, field);
 			result = STEP_RESULT_APPEARED((int *)field->cells);
 		}
 	} else if (field_piece_blocked(field, next_r, next_c, next_o)) {
