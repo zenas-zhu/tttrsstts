@@ -54,7 +54,7 @@ typedef struct {
 #define STEP_RESULT_MOVED ((Step_result){ .t = STEP_RESULT_TYPE_MOVED })
 #define STEP_RESULT_LANDED ((Step_result){ .t = STEP_RESULT_TYPE_LANDED })
 #define STEP_RESULT_LOCKED ((Step_result){ .t = STEP_RESULT_TYPE_LOCKED })
-#define STEP_RESULT_CLEARED ((Step_result){ .t = STEP_RESULT_TYPE_CLEARED })
+#define STEP_RESULT_CLEARED(c) ((Step_result){ .t = STEP_RESULT_TYPE_CLEARED, .cleared = c })
 #define STEP_RESULT_APPEARED(b) ((Step_result){ .t = STEP_RESULT_TYPE_APPEARED, .board = b })
 #define STEP_RESULT_GAMEOVER(b) ((Step_result){ .t = STEP_RESULT_TYPE_GAMEOVER, .board = b })
 

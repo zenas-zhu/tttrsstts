@@ -36,4 +36,14 @@ void updates_set_timeout(Updates *updates, long timeout);
  */
 long updates_get_timeout(Updates *updates);
 
+/*
+ * set action text after line clear (e.g. "single")
+ */
+void updates_set_action(Updates *updates, char *action);
+
+/*
+ * get action text after line clear (e.g. "single")
+ */
+char *updates_get_action(Updates *updates);
+
 #endif

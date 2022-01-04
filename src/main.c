@@ -16,6 +16,7 @@ int main()
 	noecho();
 	curs_set(0);
 	WINDOW *win = newwin(22, 22, 0, 0);
+	WINDOW *action = newwin(1, 22, 22, 0);
 	keypad(win, TRUE);
 	box(win, 0, 0);
 	Updates *u = updates_create();
@@ -24,9 +25,13 @@ int main()
 	bool result = game_tick(g, NULL, u);
 	while (result) {
 		draw_board(win, u);
+		wclear(action);
+		wprintw(action, "%s", updates_get_action(u));
+		wrefresh(action);
 		poll_kbd(win, p);
 		result = game_tick(g, p, u);
 	}
+	wclear(action);
 	draw_board(win, u);
 	game_destroy(g);
 	updates_destroy(u);

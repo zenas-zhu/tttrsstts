@@ -4,6 +4,7 @@
 struct updates_ {
 	int *board;
 	long timeout;
+	char *action;
 };
 
 Updates *updates_create()
@@ -35,4 +36,14 @@ void updates_set_timeout(Updates *updates, long timeout)
 long updates_get_timeout(Updates *updates)
 {
 	return updates->timeout;
+}
+
+void updates_set_action(Updates *updates, char *action)
+{
+	updates->action = action;
+}
+
+char *updates_get_action(Updates *updates)
+{
+	return updates->action;
 }

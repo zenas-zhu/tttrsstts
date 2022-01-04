@@ -32,6 +32,7 @@ bool game_tick(Game *game, Inputs *inputs, Updates *updates)
 		Step_result r = field_step(game->field, STEP_APPEAR);
 		updates_set_board(updates, r.board);
 		updates_set_timeout(updates, DROP_MILLIS);
+		updates_set_action(updates, "");
 		game->drop_timer = DROP_MILLIS;
 		game->started = true;
 		game->landed = false;
@@ -66,8 +67,11 @@ bool game_tick(Game *game, Inputs *inputs, Updates *updates)
 		}
 	} else if (action == ACTION_HARD_DROP || (timedout && game->landed)) {
 		field_step(game->field, STEP_LOCK);
-		field_step(game->field, STEP_CLEAR);
-		Step_result r = field_step(game->field, STEP_APPEAR);
+		Step_result r = field_step(game->field, STEP_CLEAR);
+		if (r.cleared > 4) r.cleared = 4;
+		char *actiontexts[] = { "", "single", "double", "triple", "four" };
+		updates_set_action(updates, actiontexts[r.cleared]);
+		r = field_step(game->field, STEP_APPEAR);
 		if (r.t == STEP_RESULT_TYPE_GAMEOVER) {
 			return false;
 		}
