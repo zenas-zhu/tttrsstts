@@ -21,16 +21,9 @@ static const bool PIECE_T[PIECE_T_SIZE][PIECE_T_SIZE] = {
 	{ false, false, false },
 };
 
-static bool field_occupied(Field *field, int r, int c);
 static bool field_piece_blocked(Field *field, int r, int c, int o);
 static void field_minos_do(int r, int c, int o, void (*cb)(int, int, void *), void *ctx);
-
-static void docellclear(int r, int c, void *ctx)
-{ ((Field *)ctx)->cells[r][c] = 0; }
-static void docellfill(int r, int c, void *ctx)
-{ ((Field *)ctx)->cells[r][c] = 1; }
-static void docellhi(int r, int c, void *ctx)
-{ ((Field *)ctx)->cells[r][c] = 2; }
+static void field_minos_fill(Field *field, int r, int c, int o, int color);
 
 Field *field_create()
 {
@@ -70,8 +63,8 @@ Step_result field_step(Field *field, Step step)
 	bool blocked = field_piece_blocked(field, next_r, next_c, next_o);
 
 	if (step.t == STEP_TYPE_LOCK) {
-		field_minos_do(field->piece_r, field->piece_c, field->piece_o, docellclear, field);
-		field_minos_do(next_r, next_c, next_o, docellfill, field);
+		field_minos_fill(field, field->piece_r, field->piece_c, field->piece_o, 0);
+		field_minos_fill(field, next_r, next_c, next_o, 1);
 		result = STEP_RESULT_LOCKED;
 	} else if (step.t == STEP_TYPE_CLEAR) {
 		int src = 0, dst = 0, cleared = 0;
@@ -103,7 +96,7 @@ Step_result field_step(Field *field, Step step)
 		result = STEP_RESULT_CLEARED(cleared);
 	} else if (step.t == STEP_TYPE_APPEAR) {
 		bool gameover = field_piece_blocked(field, next_r, next_c, next_o);
-		field_minos_do(next_r, next_c, next_o, docellhi, field);
+		field_minos_fill(field, next_r, next_c, next_o, 2);
 		if (gameover) {
 			result = STEP_RESULT_GAMEOVER((int *)field->cells);
 		} else {
@@ -116,8 +109,8 @@ Step_result field_step(Field *field, Step step)
 			result = STEP_RESULT_NOTHING;
 		}
 	} else {
-		field_minos_do(field->piece_r, field->piece_c, field->piece_o, docellclear, field);
-		field_minos_do(next_r, next_c, next_o, docellhi, field);
+		field_minos_fill(field, field->piece_r, field->piece_c, field->piece_o, 0);
+		field_minos_fill(field, next_r, next_c, next_o, 2);
 		result = STEP_RESULT_MOVED;
 	}
 
@@ -129,17 +122,13 @@ Step_result field_step(Field *field, Step step)
 	return result;
 }
 
-static bool field_occupied(Field *field, int r, int c)
-{
-	return (r < 0) || (c < 0) || (c >= 10) || field->cells[r][c] == 1;
-}
-
 struct checkblock_ctx { Field *f; bool blocked; };
 
 static void checkblock(int r, int c, void *ctx)
 {
 	struct checkblock_ctx *x = ctx;
-	x->blocked |= field_occupied(x->f, r, c);
+	bool cellblocked = (r < 0) || (r >= 40) || (c < 0) || (c >= 10) || x->f->cells[r][c] == 1;
+	x->blocked |= cellblocked;
 }
 
 static bool field_piece_blocked(Field *field, int r, int c, int o)
@@ -165,4 +154,18 @@ static void field_minos_do(int r, int c, int o, void (*cb)(int, int, void *), vo
 			}
 		}
 	}
+}
+
+struct fillcell_ctx { Field *f; int color; };
+
+static void fillcell(int r, int c, void *ctx)
+{
+	struct fillcell_ctx *x = ctx;
+	x->f->cells[r][c] = x->color;
+}
+
+static void field_minos_fill(Field *field, int r, int c, int o, int color)
+{
+	struct fillcell_ctx x = { .f = field, .color = color };
+	field_minos_do(r, c, o, fillcell, &x);
 }
