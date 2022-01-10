@@ -29,7 +29,7 @@ typedef struct {
 #define STEP_ROTATE(r) ((Step){ .t = STEP_TYPE_ROTATE, .rotdir = r })
 #define STEP_LOCK ((Step){ .t = STEP_TYPE_LOCK })
 #define STEP_CLEAR ((Step){ .t = STEP_TYPE_CLEAR })
-#define STEP_APPEAR ((Step){ .t = STEP_TYPE_APPEAR })
+#define STEP_APPEAR(a) ((Step){ .t = STEP_TYPE_APPEAR, .appear_piece = a })
 
 /*
  * types of changes that can happen to a playfield

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ncurses.h>
+#include <time.h>
 #include "updates.h"
 #include "inputs.h"
 #include "game.h"
@@ -10,6 +11,7 @@ void poll_kbd(WINDOW *win, Inputs *p);
 
 int main()
 {
+	srand(time(NULL));
 	initscr();
 	// raw();
 	cbreak();

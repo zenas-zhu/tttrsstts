@@ -2,28 +2,19 @@
 #include <stdbool.h>
 #include <ncurses.h>
 #include "field.h"
+#include "piece.h"
 
 struct field_ {
+	int piece_id;
 	int piece_r;
 	int piece_c;
 	int piece_o;
 	int cells[40][10];
 };
 
-#define SPAWN_R 18
-#define SPAWN_C 4
-#define SPAWN_O 0
-
-#define PIECE_T_SIZE 3
-static const bool PIECE_T[PIECE_T_SIZE][PIECE_T_SIZE] = {
-	{ false, true, false },
-	{ true, true, true },
-	{ false, false, false },
-};
-
-static bool field_piece_blocked(Field *field, int r, int c, int o);
-static void field_minos_do(int r, int c, int o, void (*cb)(int, int, void *), void *ctx);
-static void field_minos_fill(Field *field, int r, int c, int o, int color);
+static bool field_piece_blocked(Field *field, int p, int r, int c, int o);
+static void field_minos_do(int p, int r, int c, int o, void (*cb)(int, int, void *), void *ctx);
+static void field_minos_fill(Field *field, int p, int r, int c, int o, int color);
 
 Field *field_create()
 {
@@ -48,23 +39,24 @@ Step_result field_step(Field *field, Step step)
 		case STEP_TYPE_MOVE: next_c += step.movedir; break;
 		case STEP_TYPE_ROTATE: next_o = (next_o + step.rotdir) % 4; break;
 		case STEP_TYPE_LOCK:
-			while (!field_piece_blocked(field, next_r - 1, next_c, next_o)) {
+			while (!field_piece_blocked(field, field->piece_id, next_r - 1, next_c, next_o)) {
 				next_r -= 1;
 			}
 			break;
 		case STEP_TYPE_CLEAR: break;
 		case STEP_TYPE_APPEAR:
-			next_r = SPAWN_R;
-			next_c = SPAWN_C;
-			next_o = SPAWN_O;
+			field->piece_id = step.appear_piece;
+			next_r = 21 - PIECE_SIZES[step.appear_piece];
+			next_c = (10 - PIECE_SIZES[step.appear_piece]) / 2;
+			next_o = 0;
 			break;
 	}
 	Step_result result;
-	bool blocked = field_piece_blocked(field, next_r, next_c, next_o);
+	bool blocked = field_piece_blocked(field, field->piece_id, next_r, next_c, next_o);
 
 	if (step.t == STEP_TYPE_LOCK) {
-		field_minos_fill(field, field->piece_r, field->piece_c, field->piece_o, 0);
-		field_minos_fill(field, next_r, next_c, next_o, 1);
+		field_minos_fill(field, field->piece_id, field->piece_r, field->piece_c, field->piece_o, 0);
+		field_minos_fill(field, field->piece_id, next_r, next_c, next_o, 1);
 		result = STEP_RESULT_LOCKED;
 	} else if (step.t == STEP_TYPE_CLEAR) {
 		int src = 0, dst = 0, cleared = 0;
@@ -95,22 +87,22 @@ Step_result field_step(Field *field, Step step)
 		}
 		result = STEP_RESULT_CLEARED(cleared);
 	} else if (step.t == STEP_TYPE_APPEAR) {
-		bool gameover = field_piece_blocked(field, next_r, next_c, next_o);
-		field_minos_fill(field, next_r, next_c, next_o, 2);
+		bool gameover = field_piece_blocked(field, field->piece_id, next_r, next_c, next_o);
+		field_minos_fill(field, field->piece_id, next_r, next_c, next_o, 2);
 		if (gameover) {
 			result = STEP_RESULT_GAMEOVER((int *)field->cells);
 		} else {
 			result = STEP_RESULT_APPEARED((int *)field->cells);
 		}
-	} else if (field_piece_blocked(field, next_r, next_c, next_o)) {
+	} else if (field_piece_blocked(field, field->piece_id, next_r, next_c, next_o)) {
 		if (step.t == STEP_TYPE_DOWN) {
 			result = STEP_RESULT_LANDED;
 		} else {
 			result = STEP_RESULT_NOTHING;
 		}
 	} else {
-		field_minos_fill(field, field->piece_r, field->piece_c, field->piece_o, 0);
-		field_minos_fill(field, next_r, next_c, next_o, 2);
+		field_minos_fill(field, field->piece_id, field->piece_r, field->piece_c, field->piece_o, 0);
+		field_minos_fill(field, field->piece_id, next_r, next_c, next_o, 2);
 		result = STEP_RESULT_MOVED;
 	}
 
@@ -131,20 +123,20 @@ static void checkblock(int r, int c, void *ctx)
 	x->blocked |= cellblocked;
 }
 
-static bool field_piece_blocked(Field *field, int r, int c, int o)
+static bool field_piece_blocked(Field *field, int p, int r, int c, int o)
 {
 	struct checkblock_ctx x = { .f = field, .blocked = false };
-	field_minos_do(r, c, o, checkblock, &x);
+	field_minos_do(p, r, c, o, checkblock, &x);
 	return x.blocked;
 }
 
-static void field_minos_do(int r, int c, int o, void (*cb)(int, int, void *), void *ctx)
+static void field_minos_do(int p, int r, int c, int o, void (*cb)(int, int, void *), void *ctx)
 {
-	for (int y = 0; y < PIECE_T_SIZE; y++) {
-		for (int x = 0; x < PIECE_T_SIZE; x++) {
-			if (PIECE_T[y][x]) {
-				int ny = PIECE_T_SIZE - y - 1;
-				int nx = PIECE_T_SIZE - x - 1;
+	for (int y = 0; y < PIECE_SIZES[p]; y++) {
+		for (int x = 0; x < PIECE_SIZES[p]; x++) {
+			if (PIECES[p][y * PIECE_SIZES[p] + x]) {
+				int ny = PIECE_SIZES[p] - y - 1;
+				int nx = PIECE_SIZES[p] - x - 1;
 				switch (o) {
 					case 0: cb(r + ny, c + x, ctx); break;
 					case 1: cb(r + nx, c + ny, ctx); break;
@@ -164,8 +156,8 @@ static void fillcell(int r, int c, void *ctx)
 	x->f->cells[r][c] = x->color;
 }
 
-static void field_minos_fill(Field *field, int r, int c, int o, int color)
+static void field_minos_fill(Field *field, int p, int r, int c, int o, int color)
 {
 	struct fillcell_ctx x = { .f = field, .color = color };
-	field_minos_do(r, c, o, fillcell, &x);
+	field_minos_do(p, r, c, o, fillcell, &x);
 }
