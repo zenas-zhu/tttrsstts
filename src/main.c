@@ -53,7 +53,7 @@ void draw_board(WINDOW *win, Updates *u)
 {
 	int *board = updates_get_board(u);
 	for (int i = 0; i < 200; i++) {
-		static char *draw_texts[3] = {"  ", "##", "[]"};
+		static char *draw_texts[4] = {"  ", "##", "##", "[]"};
 		char *draw_text = draw_texts[board[i]];
 		if (i % 10 == 0) {
 			wmove(win, 20 - i / 10, 1);

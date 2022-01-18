@@ -9,6 +9,7 @@ struct field_ {
 	int piece_r;
 	int piece_c;
 	int piece_o;
+	int ghost_r;
 	int cells[40][10];
 };
 
@@ -38,11 +39,7 @@ Step_result field_step(Field *field, Step step)
 		case STEP_TYPE_DOWN: next_r -= 1; break;
 		case STEP_TYPE_MOVE: next_c += step.movedir; break;
 		case STEP_TYPE_ROTATE: next_o = (next_o + step.rotdir) % 4; break;
-		case STEP_TYPE_LOCK:
-			while (!field_piece_blocked(field, field->piece_id, next_r - 1, next_c, next_o)) {
-				next_r -= 1;
-			}
-			break;
+		case STEP_TYPE_LOCK: next_r = field->ghost_r;
 		case STEP_TYPE_CLEAR: break;
 		case STEP_TYPE_APPEAR:
 			field->piece_id = step.appear_piece;
@@ -88,12 +85,17 @@ Step_result field_step(Field *field, Step step)
 		result = STEP_RESULT_CLEARED(cleared);
 	} else if (step.t == STEP_TYPE_APPEAR) {
 		bool gameover = field_piece_blocked(field, field->piece_id, next_r, next_c, next_o);
-		field_minos_fill(field, field->piece_id, next_r, next_c, next_o, 2);
 		if (gameover) {
 			result = STEP_RESULT_GAMEOVER((int *)field->cells);
 		} else {
 			result = STEP_RESULT_APPEARED((int *)field->cells);
+			field->ghost_r = next_r;
+			while (!field_piece_blocked(field, field->piece_id, field->ghost_r - 1, next_c, next_o)) {
+				field->ghost_r -= 1;
+			}
+			field_minos_fill(field, field->piece_id, field->ghost_r, next_c, next_o, 3);
 		}
+		field_minos_fill(field, field->piece_id, next_r, next_c, next_o, 2);
 	} else if (field_piece_blocked(field, field->piece_id, next_r, next_c, next_o)) {
 		if (step.t == STEP_TYPE_DOWN) {
 			result = STEP_RESULT_LANDED;
@@ -102,6 +104,14 @@ Step_result field_step(Field *field, Step step)
 		}
 	} else {
 		field_minos_fill(field, field->piece_id, field->piece_r, field->piece_c, field->piece_o, 0);
+		field_minos_fill(field, field->piece_id, field->ghost_r, field->piece_c, field->piece_o, 0);
+		if (step.t != STEP_TYPE_DOWN) {
+			field->ghost_r = next_r;
+			while (!field_piece_blocked(field, field->piece_id, field->ghost_r - 1, next_c, next_o)) {
+				field->ghost_r -= 1;
+			}
+		}
+		field_minos_fill(field, field->piece_id, field->ghost_r, next_c, next_o, 3);
 		field_minos_fill(field, field->piece_id, next_r, next_c, next_o, 2);
 		result = STEP_RESULT_MOVED;
 	}
