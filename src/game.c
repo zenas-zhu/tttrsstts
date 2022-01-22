@@ -8,20 +8,23 @@
 struct game_ {
 	Field *field;
 	int drop_timer;
-	bool started;
 	bool landed;
 	int bag[7];
 	int bag_used;
+	int queue[5];
 };
 
+static int game_cycle_piece(Game *game);
 static int game_gen_piece(Game *game);
 
 Game *game_create()
 {
 	Game *game = malloc(sizeof(Game));
 	game->field = field_create();
-	game->started = false;
 	game->bag_used = 7;
+	for (int i = 0; i < 5; i++) {
+		game->queue[i] = game_gen_piece(game);
+	}
 	return game;
 }
 
@@ -31,18 +34,21 @@ void game_destroy(Game *game)
 	free(game);
 }
 
+bool game_init(Game *game, Updates *updates)
+{
+	Step_result r = field_step(game->field, STEP_APPEAR(game_cycle_piece(game)));
+	updates_set_board(updates, r.board);
+	updates_set_queue(updates, game->queue);
+	updates_flag_redraw(updates);
+	updates_set_timeout(updates, DROP_MILLIS);
+	updates_set_action(updates, "");
+	game->drop_timer = DROP_MILLIS;
+	game->landed = false;
+	return true;
+}
+
 bool game_tick(Game *game, Inputs *inputs, Updates *updates)
 {
-	if (!game->started) {
-		Step_result r = field_step(game->field, STEP_APPEAR(game_gen_piece(game)));
-		updates_set_board(updates, r.board);
-		updates_set_timeout(updates, DROP_MILLIS);
-		updates_set_action(updates, "");
-		game->drop_timer = DROP_MILLIS;
-		game->started = true;
-		game->landed = false;
-		return true;
-	}
 	game->drop_timer -= inputs_get_millis(inputs);
 	bool timedout = (game->drop_timer <= 0);
 	bool stallable = true;
@@ -76,7 +82,8 @@ bool game_tick(Game *game, Inputs *inputs, Updates *updates)
 		if (r.cleared > 4) r.cleared = 4;
 		char *actiontexts[] = { "", "single", "double", "triple", "four" };
 		updates_set_action(updates, actiontexts[r.cleared]);
-		r = field_step(game->field, STEP_APPEAR(game_gen_piece(game)));
+		r = field_step(game->field, STEP_APPEAR(game_cycle_piece(game)));
+		updates_flag_redraw(updates);
 		if (r.t == STEP_RESULT_TYPE_GAMEOVER) {
 			return false;
 		}
@@ -87,6 +94,16 @@ bool game_tick(Game *game, Inputs *inputs, Updates *updates)
 	}
 	updates_set_timeout(updates, game->drop_timer);
 	return true;
+}
+
+static int game_cycle_piece(Game *game)
+{
+	int next = game->queue[0];
+	for (int i = 0; i < 4; i++) {
+		game->queue[i] = game->queue[i+1];
+	}
+	game->queue[4] = game_gen_piece(game);
+	return next;
 }
 
 static int game_gen_piece(Game *game)

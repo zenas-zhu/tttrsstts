@@ -5,8 +5,10 @@
 #include "updates.h"
 #include "inputs.h"
 #include "game.h"
+#include "piece.h"
 
 void draw_board(WINDOW *win, Updates *u);
+void draw_queue(WINDOW *qwin, Updates *u);
 void poll_kbd(WINDOW *win, Inputs *p);
 
 int main()
@@ -19,14 +21,16 @@ int main()
 	curs_set(0);
 	WINDOW *win = newwin(22, 22, 0, 0);
 	WINDOW *action = newwin(1, 22, 22, 0);
+	WINDOW *qwin = newwin(20, 8, 1, 23);
 	keypad(win, TRUE);
 	box(win, 0, 0);
 	Updates *u = updates_create();
 	Inputs *p = inputs_create();
 	Game *g = game_create();
-	bool result = game_tick(g, NULL, u);
+	bool result = game_init(g, u);
 	while (result) {
 		draw_board(win, u);
+		draw_queue(qwin, u);
 		wclear(action);
 		wprintw(action, "%s", updates_get_action(u));
 		wrefresh(action);
@@ -51,17 +55,37 @@ int main()
 
 void draw_board(WINDOW *win, Updates *u)
 {
+	static char *draw_texts[4] = {"  ", "##", "##", "[]"};
 	int *board = updates_get_board(u);
 	for (int i = 0; i < 200; i++) {
-		static char *draw_texts[4] = {"  ", "##", "##", "[]"};
-		char *draw_text = draw_texts[board[i]];
 		if (i % 10 == 0) {
 			wmove(win, 20 - i / 10, 1);
 		}
-		wprintw(win, draw_text);
+		wprintw(win, draw_texts[board[i]]);
 	}
 	wrefresh(win);
 	wtimeout(win, updates_get_timeout(u));
+}
+
+void draw_queue(WINDOW *qwin, Updates *u)
+{
+	static char *draw_texts[2] = {"  ", "##"};
+	static int i = 0;
+	int *queue = updates_get_queue(u);
+	if (updates_poll_redraw(u)) {
+		werase(qwin);
+		for (int i = 0; i < 5; i++) {
+			int size = PIECE_SIZES[queue[i]];
+			for (int j = 0; j < size * size; j++) {
+				if (j % size == 0) {
+					wmove(qwin, i * 4 + j / size, 0);
+				}
+				wprintw(qwin, draw_texts[PIECES[queue[i]][j]]);
+			}
+		}
+		wrefresh(qwin);
+		i++;
+	}
 }
 
 void poll_kbd(WINDOW *win, Inputs *p)

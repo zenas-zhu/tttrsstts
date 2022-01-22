@@ -21,6 +21,12 @@ Game *game_create();
 void game_destroy(Game *game);
 
 /*
+ * start a game
+ * returns false iff the game has ended
+ */
+bool game_init(Game *game, Updates *updates);
+
+/*
  * change a game state
  * returns false iff the game has ended
  */

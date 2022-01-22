@@ -1,6 +1,8 @@
 #ifndef UPDATES_H
 #define UPDATES_H
 
+#include <stdbool.h>
+
 /*
  * actions that the client will be required to perform
  */
@@ -25,6 +27,26 @@ void updates_set_board(Updates *updates, int *board);
  * retrieve the handle to the board state
  */
 int *updates_get_board(Updates *updates);
+
+/*
+ * record the handle to the piece queue
+ */
+void updates_set_queue(Updates *updates, int *queue);
+
+/*
+ * retrieve the handle to the piece queue
+ */
+int *updates_get_queue(Updates *updates);
+
+/*
+ * flag a piece queue redraw
+ */
+void updates_flag_redraw(Updates *updates);
+
+/*
+ * poll and clear the piece queue redraw flag
+ */
+bool updates_poll_redraw(Updates *updates);
 
 /*
  * set max amount of time (ms) before the game should be polled again
