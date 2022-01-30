@@ -14,7 +14,7 @@ struct game_ {
 	int queue[5];
 };
 
-static int game_cycle_piece(Game *game);
+static int game_cycle_piece(Game *game, Updates *updates);
 static int game_gen_piece(Game *game);
 
 Game *game_create()
@@ -36,7 +36,7 @@ void game_destroy(Game *game)
 
 bool game_init(Game *game, Updates *updates)
 {
-	Step_result r = field_step(game->field, STEP_APPEAR(game_cycle_piece(game)));
+	Step_result r = field_step(game->field, STEP_APPEAR(game_cycle_piece(game, updates)));
 	updates_set_board(updates, r.board);
 	updates_set_queue(updates, game->queue);
 	updates_flag_redraw(updates);
@@ -82,7 +82,7 @@ bool game_tick(Game *game, Inputs *inputs, Updates *updates)
 		if (r.cleared > 4) r.cleared = 4;
 		char *actiontexts[] = { "", "single", "double", "triple", "four" };
 		updates_set_action(updates, actiontexts[r.cleared]);
-		r = field_step(game->field, STEP_APPEAR(game_cycle_piece(game)));
+		r = field_step(game->field, STEP_APPEAR(game_cycle_piece(game, updates)));
 		updates_flag_redraw(updates);
 		if (r.t == STEP_RESULT_TYPE_GAMEOVER) {
 			return false;
@@ -96,13 +96,14 @@ bool game_tick(Game *game, Inputs *inputs, Updates *updates)
 	return true;
 }
 
-static int game_cycle_piece(Game *game)
+static int game_cycle_piece(Game *game, Updates *updates)
 {
 	int next = game->queue[0];
 	for (int i = 0; i < 4; i++) {
 		game->queue[i] = game->queue[i+1];
 	}
 	game->queue[4] = game_gen_piece(game);
+	updates_set_curcolor(updates, next);
 	return next;
 }
 

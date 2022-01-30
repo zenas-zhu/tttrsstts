@@ -6,5 +6,6 @@
 extern const int PIECES_SIZE;
 extern const bool *PIECES[];
 extern const int PIECE_SIZES[];
+extern const int PIECE_COLORS[];
 
 #endif

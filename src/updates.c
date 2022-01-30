@@ -4,6 +4,7 @@
 struct updates_ {
 	int *board;
 	int *queue;
+	int curcolor;
 	bool redraw;
 	long timeout;
 	char *action;
@@ -38,6 +39,16 @@ void updates_set_queue(Updates *updates, int *queue)
 int *updates_get_queue(Updates *updates)
 {
 	return updates->queue;
+}
+
+void updates_set_curcolor(Updates *updates, int curcolor)
+{
+	updates->curcolor = curcolor;
+}
+
+int updates_get_curcolor(Updates *updates)
+{
+	return updates->curcolor;
 }
 
 void updates_flag_redraw(Updates *updates)

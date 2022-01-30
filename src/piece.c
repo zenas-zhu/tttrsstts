@@ -55,3 +55,7 @@ const bool *PIECES[] = {
 const int PIECE_SIZES[] = {
 	4, 3, 3, 2, 3, 3, 3,
 };
+
+const int PIECE_COLORS[] = {
+	44, 62, 172, 185, 40, 170, 167,
+};

@@ -22,6 +22,15 @@ int main()
 	WINDOW *win = newwin(22, 22, 0, 0);
 	WINDOW *action = newwin(1, 22, 22, 0);
 	WINDOW *qwin = newwin(20, 8, 1, 23);
+	{
+		start_color();
+		use_default_colors();
+		init_pair(0, -1, -1);
+		init_pair(1, -1, 240);
+		for (int i = 0; i < PIECES_SIZE; i++) {
+			init_pair(2 + i, -1, PIECE_COLORS[i]);
+		}
+	}
 	keypad(win, TRUE);
 	box(win, 0, 0);
 	Updates *u = updates_create();
@@ -55,13 +64,21 @@ int main()
 
 void draw_board(WINDOW *win, Updates *u)
 {
-	static char *draw_texts[4] = {"  ", "##", "##", "[]"};
 	int *board = updates_get_board(u);
 	for (int i = 0; i < 200; i++) {
 		if (i % 10 == 0) {
 			wmove(win, 20 - i / 10, 1);
 		}
-		wprintw(win, draw_texts[board[i]]);
+		if (board[i]) {
+			int color = board[i] >= 2
+			            ? board[i] - 1
+			            : updates_get_curcolor(u) + 2;
+			wattr_set(win, A_NORMAL, color, NULL);
+			wprintw(win, "  ");
+			wattr_set(win, A_NORMAL, 0, NULL);
+		} else if (board[i] == 0) {
+			wprintw(win, "  ");
+		}
 	}
 	wrefresh(win);
 	wtimeout(win, updates_get_timeout(u));
@@ -69,22 +86,23 @@ void draw_board(WINDOW *win, Updates *u)
 
 void draw_queue(WINDOW *qwin, Updates *u)
 {
-	static char *draw_texts[2] = {"  ", "##"};
-	static int i = 0;
 	int *queue = updates_get_queue(u);
 	if (updates_poll_redraw(u)) {
 		werase(qwin);
 		for (int i = 0; i < 5; i++) {
+			wattr_set(qwin, A_NORMAL, 2 + queue[i], NULL);
 			int size = PIECE_SIZES[queue[i]];
+			int offsetx = (4 - size) / 2 * 2;
+			int offsety = (size - 3) / 2;
 			for (int j = 0; j < size * size; j++) {
-				if (j % size == 0) {
-					wmove(qwin, i * 4 + j / size, 0);
+				if (PIECES[queue[i]][j]) {
+					wmove(qwin, i * 4 + j / size + offsety, j % size * 2 + offsetx);
+					wprintw(qwin, "  ");
 				}
-				wprintw(qwin, draw_texts[PIECES[queue[i]][j]]);
 			}
+			wattr_set(qwin, A_NORMAL, 0, NULL);
 		}
 		wrefresh(qwin);
-		i++;
 	}
 }
 

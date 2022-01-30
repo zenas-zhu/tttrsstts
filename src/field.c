@@ -53,7 +53,7 @@ Step_result field_step(Field *field, Step step)
 
 	if (step.t == STEP_TYPE_LOCK) {
 		field_minos_fill(field, field->piece_id, field->piece_r, field->piece_c, field->piece_o, 0);
-		field_minos_fill(field, field->piece_id, next_r, next_c, next_o, 1);
+		field_minos_fill(field, field->piece_id, next_r, next_c, next_o, 3 + field->piece_id);
 		result = STEP_RESULT_LOCKED;
 	} else if (step.t == STEP_TYPE_CLEAR) {
 		int src = 0, dst = 0, cleared = 0;
@@ -66,7 +66,7 @@ Step_result field_step(Field *field, Step step)
 			} else {
 				bool clear = true;
 				for (int c = 0; c < 10; c++) {
-					if (field->cells[src][c] != 1) {
+					if (field->cells[src][c] < 3) {
 						clear = false;
 						break;
 					}
@@ -93,9 +93,9 @@ Step_result field_step(Field *field, Step step)
 			while (!field_piece_blocked(field, field->piece_id, field->ghost_r - 1, next_c, next_o)) {
 				field->ghost_r -= 1;
 			}
-			field_minos_fill(field, field->piece_id, field->ghost_r, next_c, next_o, 3);
+			field_minos_fill(field, field->piece_id, field->ghost_r, next_c, next_o, 2);
 		}
-		field_minos_fill(field, field->piece_id, next_r, next_c, next_o, 2);
+		field_minos_fill(field, field->piece_id, next_r, next_c, next_o, 1);
 	} else if (field_piece_blocked(field, field->piece_id, next_r, next_c, next_o)) {
 		if (step.t == STEP_TYPE_DOWN) {
 			result = STEP_RESULT_LANDED;
@@ -111,8 +111,8 @@ Step_result field_step(Field *field, Step step)
 				field->ghost_r -= 1;
 			}
 		}
-		field_minos_fill(field, field->piece_id, field->ghost_r, next_c, next_o, 3);
-		field_minos_fill(field, field->piece_id, next_r, next_c, next_o, 2);
+		field_minos_fill(field, field->piece_id, field->ghost_r, next_c, next_o, 2);
+		field_minos_fill(field, field->piece_id, next_r, next_c, next_o, 1);
 		result = STEP_RESULT_MOVED;
 	}
 
@@ -129,7 +129,7 @@ struct checkblock_ctx { Field *f; bool blocked; };
 static void checkblock(int r, int c, void *ctx)
 {
 	struct checkblock_ctx *x = ctx;
-	bool cellblocked = (r < 0) || (r >= 40) || (c < 0) || (c >= 10) || x->f->cells[r][c] == 1;
+	bool cellblocked = (r < 0) || (r >= 40) || (c < 0) || (c >= 10) || x->f->cells[r][c] >= 3;
 	x->blocked |= cellblocked;
 }
 

@@ -39,6 +39,16 @@ void updates_set_queue(Updates *updates, int *queue);
 int *updates_get_queue(Updates *updates);
 
 /*
+ * record the active piece color
+ */
+void updates_set_curcolor(Updates *updates, int curcolor);
+
+/*
+ * retrieve the active piece color
+ */
+int updates_get_curcolor(Updates *updates);
+
+/*
  * flag a piece queue redraw
  */
 void updates_flag_redraw(Updates *updates);
