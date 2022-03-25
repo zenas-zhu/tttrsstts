@@ -23,6 +23,7 @@ Field *field_create()
 	for (int i = 0; i < 400; i++) {
 		field->cells[0][i] = 0;
 	}
+	field->piece_id = -1;
 	return field;
 }
 
@@ -33,95 +34,137 @@ void field_destroy(Field *field)
 
 Step_result field_step(Field *field, Step step)
 {
-	int next_r = field->piece_r, next_c = field->piece_c, next_o = field->piece_o;
+	int cur_r = field->piece_r,
+	    cur_c = field->piece_c,
+	    cur_o = field->piece_o;
+	/* compute the "next position" of the piece should be,
+	   exactly what that means depends on the step.
+	   for DOWN/MOVE/ROTATE, the position of the piece after the step.
+	   for LOCK, where the piece will be locked and merged into the playfield.
+	   for APPEAR, where the next piece will be. */
+	int next_r = cur_r, next_c = cur_c, next_o = cur_o;
 	switch (step.t)
 	{
 		case STEP_TYPE_DOWN: next_r -= 1; break;
 		case STEP_TYPE_MOVE: next_c += step.movedir; break;
 		case STEP_TYPE_ROTATE: next_o = (next_o + step.rotdir) % 4; break;
-		case STEP_TYPE_LOCK: next_r = field->ghost_r;
+		case STEP_TYPE_LOCK: next_r = field->ghost_r; break;
 		case STEP_TYPE_CLEAR: break;
 		case STEP_TYPE_APPEAR:
-			field->piece_id = step.appear_piece;
 			next_r = 21 - PIECE_SIZES[step.appear_piece];
 			next_c = (10 - PIECE_SIZES[step.appear_piece]) / 2;
 			next_o = 0;
 			break;
 	}
-	Step_result result;
-	bool blocked = field_piece_blocked(field, field->piece_id, next_r, next_c, next_o);
 
-	if (step.t == STEP_TYPE_LOCK) {
-		field_minos_fill(field, field->piece_id, field->piece_r, field->piece_c, field->piece_o, 0);
-		field_minos_fill(field, field->piece_id, next_r, next_c, next_o, 3 + field->piece_id);
-		result = STEP_RESULT_LOCKED;
-	} else if (step.t == STEP_TYPE_CLEAR) {
-		int src = 0, dst = 0, cleared = 0;
-		while (dst < 40) {
-			if (src == 40) {
-				for (int c = 0; c < 10; c++) {
-					field->cells[dst][c] = 0;
+	Step_result result;
+	switch (step.t)
+	{
+		case STEP_TYPE_DOWN:
+		case STEP_TYPE_MOVE:
+		case STEP_TYPE_ROTATE:
+			if (field->piece_id == -1) {
+				result = STEP_RESULT_NOTHING;
+				break;
+			}
+			if (field_piece_blocked(field, field->piece_id, next_r, next_c, next_o)) {
+				result = STEP_RESULT_NOTHING;
+				break;
+			}
+			// clear the active piece and ghost
+			field_minos_fill(field, field->piece_id, cur_r, cur_c, cur_o, 0);
+			field_minos_fill(field, field->piece_id, field->ghost_r, cur_c, cur_o, 0);
+			// calculate new ghost position
+			if (step.t != STEP_TYPE_DOWN) {
+				field->ghost_r = next_r;
+				while (!field_piece_blocked(field, field->piece_id, field->ghost_r - 1, next_c, next_o)) {
+					field->ghost_r -= 1;
 				}
-				dst += 1;
-			} else {
-				bool clear = true;
-				for (int c = 0; c < 10; c++) {
-					if (field->cells[src][c] < 3) {
-						clear = false;
-						break;
-					}
-				}
-				if (clear) {
-					cleared += 1;
-				} else {
+			}
+			field->piece_r = next_r;
+			field->piece_c = next_c;
+			field->piece_o = next_o;
+			// draw new active piece and ghost
+			field_minos_fill(field, field->piece_id, field->ghost_r, next_c, next_o, 2);
+			field_minos_fill(field, field->piece_id, next_r, next_c, next_o, 1);
+			result = STEP_RESULT_OK;
+			break;
+		case STEP_TYPE_LOCK:
+			if (field->piece_id == -1) {
+				result = STEP_RESULT_NOTHING;
+				break;
+			}
+			// draw new piece right over the ghost piece
+			field_minos_fill(field, field->piece_id, cur_r, cur_c, cur_o, 0);
+			field_minos_fill(field, field->piece_id, next_r, next_c, next_o, 3 + field->piece_id);
+			field->piece_id = -1;
+			result = STEP_RESULT_OK;
+			break;
+		case STEP_TYPE_CLEAR:
+			if (field->piece_id != -1) {
+				result = STEP_RESULT_NOTHING;
+				break;
+			}
+			int src = 0, dst = 0, cleared = 0;
+			while (dst < 40) {
+				if (src == 40) {
+					// fill remaining space at the top with nothing
 					for (int c = 0; c < 10; c++) {
-						field->cells[dst][c] = field->cells[src][c];
+						field->cells[dst][c] = 0;
 					}
 					dst += 1;
+				} else {
+					// move down this line, or leave it to be overwritten
+					bool clear = true;
+					for (int c = 0; c < 10; c++) {
+						if (field->cells[src][c] < 3) {
+							clear = false;
+							break;
+						}
+					}
+					if (clear) {
+						cleared += 1;
+					} else {
+						for (int c = 0; c < 10; c++) {
+							field->cells[dst][c] = field->cells[src][c];
+						}
+						dst += 1;
+					}
+					src += 1;
 				}
-				src += 1;
 			}
-		}
-		result = STEP_RESULT_CLEARED(cleared);
-	} else if (step.t == STEP_TYPE_APPEAR) {
-		bool gameover = field_piece_blocked(field, field->piece_id, next_r, next_c, next_o);
-		if (gameover) {
-			result = STEP_RESULT_GAMEOVER((int *)field->cells);
-		} else {
-			result = STEP_RESULT_APPEARED((int *)field->cells);
-			field->ghost_r = next_r;
-			while (!field_piece_blocked(field, field->piece_id, field->ghost_r - 1, next_c, next_o)) {
-				field->ghost_r -= 1;
+			result = STEP_RESULT_CLEARED(cleared);
+			break;
+		case STEP_TYPE_APPEAR:
+			if (field->piece_id != -1) {
+				// clear the active piece and ghost
+				field_minos_fill(field, field->piece_id, cur_r, cur_c, cur_o, 0);
+				// field_minos_fill(field, field->piece_id, field->ghost_r, cur_c, cur_o, 0);
 			}
-			field_minos_fill(field, field->piece_id, field->ghost_r, next_c, next_o, 2);
-		}
-		field_minos_fill(field, field->piece_id, next_r, next_c, next_o, 1);
-	} else if (field_piece_blocked(field, field->piece_id, next_r, next_c, next_o)) {
-		if (step.t == STEP_TYPE_DOWN) {
-			result = STEP_RESULT_LANDED;
-		} else {
-			result = STEP_RESULT_NOTHING;
-		}
-	} else {
-		field_minos_fill(field, field->piece_id, field->piece_r, field->piece_c, field->piece_o, 0);
-		field_minos_fill(field, field->piece_id, field->ghost_r, field->piece_c, field->piece_o, 0);
-		if (step.t != STEP_TYPE_DOWN) {
-			field->ghost_r = next_r;
-			while (!field_piece_blocked(field, field->piece_id, field->ghost_r - 1, next_c, next_o)) {
-				field->ghost_r -= 1;
+			field->piece_id = step.appear_piece;
+			// can next piece spawn?
+			bool gameover = field_piece_blocked(field, field->piece_id, next_r, next_c, next_o);
+			if (gameover) {
+				result = STEP_RESULT_GAMEOVER((int *)field->cells);
+			} else {
+				result = STEP_RESULT_APPEARED((int *)field->cells);
+				// calculate and draw new ghost position
+				field->ghost_r = next_r;
+				while (!field_piece_blocked(field, field->piece_id, field->ghost_r - 1, next_c, next_o)) {
+					field->ghost_r -= 1;
+				}
+				field_minos_fill(field, field->piece_id, field->ghost_r, next_c, next_o, 2);
 			}
-		}
-		field_minos_fill(field, field->piece_id, field->ghost_r, next_c, next_o, 2);
-		field_minos_fill(field, field->piece_id, next_r, next_c, next_o, 1);
-		result = STEP_RESULT_MOVED;
+			// draw new piece
+			field_minos_fill(field, field->piece_id, next_r, next_c, next_o, 1);
+			field->piece_r = next_r;
+			field->piece_c = next_c;
+			field->piece_o = next_o;
+			break;
 	}
 
-	if (!blocked) {
-		field->piece_r = next_r;
-		field->piece_c = next_c;
-		field->piece_o = next_o;
-	}
 	return result;
+
 }
 
 struct checkblock_ctx { Field *f; bool blocked; };

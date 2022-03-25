@@ -68,12 +68,12 @@ bool game_tick(Game *game, Inputs *inputs, Updates *updates)
 	}
 	if (action == ACTION_SOFT_DROP) {
 		Step_result r = field_step(game->field, STEP_DOWN);
-		if (r.t == STEP_RESULT_TYPE_MOVED) {
+		if (r.t == STEP_RESULT_TYPE_OK) {
 			game->drop_timer = DROP_MILLIS;
 		}
 	} else if (timedout && !game->landed) {
 		Step_result r = field_step(game->field, STEP_DOWN);
-		if (r.t == STEP_RESULT_TYPE_LANDED) {
+		if (r.t == STEP_RESULT_TYPE_NOTHING) {
 			game->landed = true;
 		}
 	} else if (action == ACTION_HARD_DROP || (timedout && game->landed)) {
