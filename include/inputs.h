@@ -19,6 +19,7 @@ typedef enum {
 	ACTION_CW,
 	ACTION_CCW,
 	ACTION_180,
+	ACTION_HOLD,
 } Action;
 
 /*

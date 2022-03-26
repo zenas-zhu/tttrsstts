@@ -29,6 +29,16 @@ void updates_set_board(Updates *updates, int *board);
 int *updates_get_board(Updates *updates);
 
 /*
+ * record the hold piece
+ */
+void updates_set_hold(Updates *updates, int hold);
+
+/*
+ * retrieve the hold piece
+ */
+int updates_get_hold(Updates *updates);
+
+/*
  * record the handle to the piece queue
  */
 void updates_set_queue(Updates *updates, int *queue);
@@ -49,12 +59,12 @@ void updates_set_curcolor(Updates *updates, int curcolor);
 int updates_get_curcolor(Updates *updates);
 
 /*
- * flag a piece queue redraw
+ * flag a redraw of the hold piece and piece queue
  */
 void updates_flag_redraw(Updates *updates);
 
 /*
- * poll and clear the piece queue redraw flag
+ * poll and clear the hold/queue redraw flag
  */
 bool updates_poll_redraw(Updates *updates);
 

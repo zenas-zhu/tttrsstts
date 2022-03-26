@@ -9,6 +9,8 @@ struct game_ {
 	Field *field;
 	int drop_timer;
 	bool landed;
+	int hold;
+	bool hold_avail;
 	int bag[7];
 	int bag_used;
 	int queue[5];
@@ -39,11 +41,13 @@ bool game_init(Game *game, Updates *updates)
 	Step_result r = field_step(game->field, STEP_APPEAR(game_cycle_piece(game, updates)));
 	updates_set_board(updates, r.board);
 	updates_set_queue(updates, game->queue);
-	updates_flag_redraw(updates);
-	updates_set_timeout(updates, DROP_MILLIS);
 	updates_set_action(updates, "");
+	game->hold = -1;
+	game->hold_avail = true;
+	updates_set_hold(updates, -1);
 	game->drop_timer = DROP_MILLIS;
 	game->landed = false;
+	updates_flag_redraw(updates);
 	return true;
 }
 
@@ -66,7 +70,21 @@ bool game_tick(Game *game, Inputs *inputs, Updates *updates)
 		game->drop_timer = DROP_MILLIS;
 		game->landed = false;
 	}
-	if (action == ACTION_SOFT_DROP) {
+	if (action == ACTION_HOLD) {
+		if (game->hold_avail) {
+			int cur_active = updates_get_curcolor(updates);
+			int next_active = (game->hold != -1)
+			                  ? game->hold
+			                  : game_cycle_piece(game, updates);
+			game->hold = cur_active;
+			updates_set_hold(updates, cur_active);
+			updates_set_curcolor(updates, next_active);
+			updates_flag_redraw(updates);
+			field_step(game->field, STEP_APPEAR(next_active));
+			game->drop_timer = DROP_MILLIS;
+			game->landed = false;
+		}
+	} else if (action == ACTION_SOFT_DROP) {
 		Step_result r = field_step(game->field, STEP_DOWN);
 		if (r.t == STEP_RESULT_TYPE_OK) {
 			game->drop_timer = DROP_MILLIS;

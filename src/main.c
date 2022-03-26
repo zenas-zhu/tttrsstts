@@ -8,6 +8,7 @@
 #include "piece.h"
 
 void draw_board(WINDOW *win, Updates *u);
+void draw_hold(WINDOW *hwin, Updates *u);
 void draw_queue(WINDOW *qwin, Updates *u);
 void poll_kbd(WINDOW *win, Inputs *p);
 
@@ -19,9 +20,10 @@ int main()
 	cbreak();
 	noecho();
 	curs_set(0);
-	WINDOW *win = newwin(22, 22, 0, 0);
-	WINDOW *action = newwin(1, 22, 22, 0);
-	WINDOW *qwin = newwin(20, 8, 1, 23);
+	WINDOW *win = newwin(22, 22, 0, 8);
+	WINDOW *hwin = newwin(4, 8, 1, 0);
+	WINDOW *action = newwin(1, 22, 22, 8);
+	WINDOW *qwin = newwin(20, 8, 1, 31);
 	{
 		start_color();
 		use_default_colors();
@@ -39,10 +41,15 @@ int main()
 	bool result = game_init(g, u);
 	while (result) {
 		draw_board(win, u);
-		draw_queue(qwin, u);
+		if (updates_poll_redraw(u)) {
+			draw_hold(hwin, u);
+			draw_queue(qwin, u);
+		}
 		wclear(action);
 		wprintw(action, "%s", updates_get_action(u));
 		wrefresh(action);
+		wrefresh(win);
+		wtimeout(win, updates_get_timeout(u));
 		poll_kbd(win, p);
 		result = game_tick(g, p, u);
 	}
@@ -80,30 +87,46 @@ void draw_board(WINDOW *win, Updates *u)
 			wprintw(win, "  ");
 		}
 	}
-	wrefresh(win);
-	wtimeout(win, updates_get_timeout(u));
+}
+
+void draw_hold(WINDOW *hwin, Updates *u)
+{
+	int hold = updates_get_hold(u);
+	werase(hwin);
+	if (hold >= 0) {
+		wattr_set(hwin, A_NORMAL, 2 + hold, NULL);
+		int size = PIECE_SIZES[hold];
+		int offsetx = (4 - size) / 2 * 2;
+		int offsety = (size - 3) / 2;
+		for (int j = 0; j < size * size; j++) {
+			if (PIECES[hold][j]) {
+				wmove(hwin, j / size + offsety, j % size * 2 + offsetx);
+				wprintw(hwin, "  ");
+			}
+		}
+		wattr_set(hwin, A_NORMAL, 0, NULL);
+	}
+	wrefresh(hwin);
 }
 
 void draw_queue(WINDOW *qwin, Updates *u)
 {
 	int *queue = updates_get_queue(u);
-	if (updates_poll_redraw(u)) {
-		werase(qwin);
-		for (int i = 0; i < 5; i++) {
-			wattr_set(qwin, A_NORMAL, 2 + queue[i], NULL);
-			int size = PIECE_SIZES[queue[i]];
-			int offsetx = (4 - size) / 2 * 2;
-			int offsety = (size - 3) / 2;
-			for (int j = 0; j < size * size; j++) {
-				if (PIECES[queue[i]][j]) {
-					wmove(qwin, i * 4 + j / size + offsety, j % size * 2 + offsetx);
-					wprintw(qwin, "  ");
-				}
+	werase(qwin);
+	for (int i = 0; i < 5; i++) {
+		wattr_set(qwin, A_NORMAL, 2 + queue[i], NULL);
+		int size = PIECE_SIZES[queue[i]];
+		int offsetx = (4 - size) / 2 * 2;
+		int offsety = (size - 3) / 2;
+		for (int j = 0; j < size * size; j++) {
+			if (PIECES[queue[i]][j]) {
+				wmove(qwin, i * 4 + j / size + offsety, j % size * 2 + offsetx);
+				wprintw(qwin, "  ");
 			}
-			wattr_set(qwin, A_NORMAL, 0, NULL);
 		}
-		wrefresh(qwin);
+		wattr_set(qwin, A_NORMAL, 0, NULL);
 	}
+	wrefresh(qwin);
 }
 
 void poll_kbd(WINDOW *win, Inputs *p)
@@ -120,6 +143,7 @@ void poll_kbd(WINDOW *win, Inputs *p)
 		case 'o': a = ACTION_CCW; break;
 		case 'e': a = ACTION_180; break;
 		case 'u': a = ACTION_CW; break;
+		case 'a': a = ACTION_HOLD; break;
 	}
 	inputs_set_action(p, a);
 }

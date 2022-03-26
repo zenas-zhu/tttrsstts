@@ -3,6 +3,7 @@
 
 struct updates_ {
 	int *board;
+	int hold;
 	int *queue;
 	int curcolor;
 	bool redraw;
@@ -29,6 +30,16 @@ void updates_set_board(Updates *updates, int *board)
 int *updates_get_board(Updates *updates)
 {
 	return updates->board;
+}
+
+void updates_set_hold(Updates *updates, int hold)
+{
+	updates->hold = hold;
+}
+
+int updates_get_hold(Updates *updates)
+{
+	return updates->hold;
 }
 
 void updates_set_queue(Updates *updates, int *queue)

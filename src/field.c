@@ -139,7 +139,7 @@ Step_result field_step(Field *field, Step step)
 			if (field->piece_id != -1) {
 				// clear the active piece and ghost
 				field_minos_fill(field, field->piece_id, cur_r, cur_c, cur_o, 0);
-				// field_minos_fill(field, field->piece_id, field->ghost_r, cur_c, cur_o, 0);
+				field_minos_fill(field, field->piece_id, field->ghost_r, cur_c, cur_o, 0);
 			}
 			field->piece_id = step.appear_piece;
 			// can next piece spawn?
