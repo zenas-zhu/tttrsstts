@@ -83,6 +83,7 @@ bool game_tick(Game *game, Inputs *inputs, Updates *updates)
 			field_step(game->field, STEP_APPEAR(next_active));
 			game->drop_timer = DROP_MILLIS;
 			game->landed = false;
+			game->hold_avail = false;
 		}
 	} else if (action == ACTION_SOFT_DROP) {
 		Step_result r = field_step(game->field, STEP_DOWN);
@@ -106,6 +107,7 @@ bool game_tick(Game *game, Inputs *inputs, Updates *updates)
 			return false;
 		}
 		game->landed = false;
+		game->hold_avail = true;
 	}
 	if (action == ACTION_HARD_DROP || timedout) {
 		game->drop_timer = DROP_MILLIS;

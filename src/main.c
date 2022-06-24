@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <ncurses.h>
 #include <time.h>
+#include <unistd.h>
 #include "updates.h"
 #include "inputs.h"
 #include "game.h"
@@ -59,7 +60,7 @@ int main()
 	updates_destroy(u);
 	inputs_destroy(p);
 	{
-		WINDOW *gameover = subwin(win, 3, 16, 9, 3);
+		WINDOW *gameover = newwin(3, 16, 9, 11);
 		box(gameover, 0, 0);
 		mvwprintw(gameover, 1, 2, "game over :(");
 		wgetch(gameover);
