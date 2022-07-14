@@ -47,10 +47,10 @@ int main()
 			draw_queue(qwin, u);
 		}
 		wclear(action);
-		wprintw(action, "%s", updates_get_action(u));
+		wprintw(action, "%s", u->action);
 		wrefresh(action);
 		wrefresh(win);
-		wtimeout(win, updates_get_timeout(u));
+		wtimeout(win, u->timeout);
 		poll_kbd(win, p);
 		result = game_tick(g, p, u);
 	}
@@ -72,7 +72,7 @@ int main()
 
 void draw_board(WINDOW *win, Updates *u)
 {
-	int *board = updates_get_board(u);
+	int *board = u->board;
 	for (int i = 0; i < 200; i++) {
 		if (i % 10 == 0) {
 			wmove(win, 20 - i / 10, 1);
@@ -80,7 +80,7 @@ void draw_board(WINDOW *win, Updates *u)
 		if (board[i]) {
 			int color = board[i] >= 2
 			            ? board[i] - 1
-			            : updates_get_curcolor(u) + 2;
+			            : u->curcolor + 2;
 			wattr_set(win, A_NORMAL, color, NULL);
 			wprintw(win, "  ");
 			wattr_set(win, A_NORMAL, 0, NULL);
@@ -92,7 +92,7 @@ void draw_board(WINDOW *win, Updates *u)
 
 void draw_hold(WINDOW *hwin, Updates *u)
 {
-	int hold = updates_get_hold(u);
+	int hold = u->hold;
 	werase(hwin);
 	if (hold >= 0) {
 		wattr_set(hwin, A_NORMAL, 2 + hold, NULL);
@@ -112,7 +112,7 @@ void draw_hold(WINDOW *hwin, Updates *u)
 
 void draw_queue(WINDOW *qwin, Updates *u)
 {
-	int *queue = updates_get_queue(u);
+	int *queue = u->queue;
 	werase(qwin);
 	for (int i = 0; i < 5; i++) {
 		wattr_set(qwin, A_NORMAL, 2 + queue[i], NULL);
@@ -146,5 +146,5 @@ void poll_kbd(WINDOW *win, Inputs *p)
 		case 'u': a = ACTION_CW; break;
 		case 'a': a = ACTION_HOLD; break;
 	}
-	inputs_set_action(p, a);
+	p->action = a;
 }

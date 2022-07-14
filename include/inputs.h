@@ -1,10 +1,7 @@
 #ifndef INPUTS_H
 #define INPUTS_H
 
-/*
- * a keypress and when it occured
- */
-typedef struct inputs_ Inputs;
+#include <time.h>
 
 /*
  * the actions that can be called
@@ -21,6 +18,15 @@ typedef enum {
 	ACTION_180,
 	ACTION_HOLD,
 } Action;
+
+/*
+ * a keypress and when it occured
+ */
+typedef struct {
+	Action action; // input action
+	struct timespec base; // time when the game starts waiting for input
+	struct timespec mark; // time when input is received
+} Inputs;
 
 /*
  * create an input packet
@@ -46,15 +52,5 @@ void inputs_reset_millis(Inputs *inputs);
  * get the difference (ms) between the time of the last measured time and the "base" time
  */
 long inputs_get_millis(Inputs *inputs);
-
-/*
- * set the input action
- */
-void inputs_set_action(Inputs *inputs, Action action);
-
-/*
- * get the input action
- */
-Action inputs_get_action(Inputs *inputs);
 
 #endif

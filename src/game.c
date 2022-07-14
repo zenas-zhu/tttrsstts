@@ -39,12 +39,12 @@ void game_destroy(Game *game)
 bool game_init(Game *game, Updates *updates)
 {
 	Step_result r = field_step(game->field, STEP_APPEAR(game_cycle_piece(game, updates)));
-	updates_set_board(updates, r.board);
-	updates_set_queue(updates, game->queue);
-	updates_set_action(updates, "");
+	updates->board = r.board;
+	updates->queue = game->queue;
+	updates->action = "";
 	game->hold = -1;
 	game->hold_avail = true;
-	updates_set_hold(updates, -1);
+	updates->hold = -1;
 	game->drop_timer = DROP_MILLIS;
 	game->landed = false;
 	updates_flag_redraw(updates);
@@ -56,7 +56,7 @@ bool game_tick(Game *game, Inputs *inputs, Updates *updates)
 	game->drop_timer -= inputs_get_millis(inputs);
 	bool timedout = (game->drop_timer <= 0);
 	bool stallable = true;
-	Action action = inputs_get_action(inputs);
+	Action action = inputs->action;
 	switch (action) {
 		case ACTION_LEFT:  field_step(game->field, STEP_MOVE(-1));  break;
 		case ACTION_RIGHT: field_step(game->field, STEP_MOVE(+1));  break;
@@ -72,13 +72,13 @@ bool game_tick(Game *game, Inputs *inputs, Updates *updates)
 	}
 	if (action == ACTION_HOLD) {
 		if (game->hold_avail) {
-			int cur_active = updates_get_curcolor(updates);
+			int cur_active = updates->curcolor;
 			int next_active = (game->hold != -1)
 			                  ? game->hold
 			                  : game_cycle_piece(game, updates);
 			game->hold = cur_active;
-			updates_set_hold(updates, cur_active);
-			updates_set_curcolor(updates, next_active);
+			updates->hold = cur_active;
+			updates->curcolor = next_active;
 			updates_flag_redraw(updates);
 			field_step(game->field, STEP_APPEAR(next_active));
 			game->drop_timer = DROP_MILLIS;
@@ -100,7 +100,7 @@ bool game_tick(Game *game, Inputs *inputs, Updates *updates)
 		Step_result r = field_step(game->field, STEP_CLEAR);
 		if (r.cleared > 4) r.cleared = 4;
 		char *actiontexts[] = { "", "single", "double", "triple", "four" };
-		updates_set_action(updates, actiontexts[r.cleared]);
+		updates->action = actiontexts[r.cleared];
 		r = field_step(game->field, STEP_APPEAR(game_cycle_piece(game, updates)));
 		updates_flag_redraw(updates);
 		if (r.t == STEP_RESULT_TYPE_GAMEOVER) {
@@ -112,7 +112,7 @@ bool game_tick(Game *game, Inputs *inputs, Updates *updates)
 	if (action == ACTION_HARD_DROP || timedout) {
 		game->drop_timer = DROP_MILLIS;
 	}
-	updates_set_timeout(updates, game->drop_timer);
+	updates->timeout = game->drop_timer;
 	return true;
 }
 
@@ -123,7 +123,7 @@ static int game_cycle_piece(Game *game, Updates *updates)
 		game->queue[i] = game->queue[i+1];
 	}
 	game->queue[4] = game_gen_piece(game);
-	updates_set_curcolor(updates, next);
+	updates->curcolor = next;
 	return next;
 }
 
