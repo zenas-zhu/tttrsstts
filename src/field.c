@@ -68,8 +68,27 @@ Step_result field_step(Field *field, Step step)
 				break;
 			}
 			if (field_piece_blocked(field, field->piece_id, next_r, next_c, next_o)) {
-				result = STEP_RESULT_NOTHING;
-				break;
+				// attempt rotate with kick
+				bool unkickable = true;
+				if (step.t == STEP_TYPE_ROTATE) {
+					int kicks_id = KICKS_IDS[field->piece_id];
+					int kicks_count = KICKS_SIZES[kicks_id];
+					int kicks_offset = ((step.rotdir - 1) * 4 + cur_o) * kicks_count * 2;
+					for (int i = 0; i < kicks_count; i++) {
+						int kick_r = KICKS[kicks_id][kicks_offset + i * 2 + 1];
+						int kick_c = KICKS[kicks_id][kicks_offset + i * 2 + 0];
+						if (!field_piece_blocked(field, field->piece_id, cur_r + kick_r, cur_c + kick_c, next_o)) {
+							next_r = cur_r + kick_r;
+							next_c = cur_c + kick_c;
+							unkickable = false;
+							break;
+						}
+					}
+				}
+				if (unkickable) {
+					result = STEP_RESULT_NOTHING;
+					break;
+				}
 			}
 			// clear the active piece and ghost
 			field_minos_fill(field, field->piece_id, cur_r, cur_c, cur_o, 0);
