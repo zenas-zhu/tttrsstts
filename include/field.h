@@ -65,7 +65,10 @@ typedef struct {
 	} t;
 	union {
 		int *board;
-		int cleared;
+		struct {
+			int cleared;
+			bool tspin;
+		};
 	};
 } Step_result;
 
@@ -74,7 +77,7 @@ typedef struct {
  */
 #define STEP_RESULT_NOTHING ((Step_result){ .t = STEP_RESULT_TYPE_NOTHING })
 #define STEP_RESULT_OK ((Step_result){ .t = STEP_RESULT_TYPE_OK })
-#define STEP_RESULT_CLEARED(c) ((Step_result){ .t = STEP_RESULT_TYPE_CLEARED, .cleared = c })
+#define STEP_RESULT_CLEARED(c, ts) ((Step_result){ .t = STEP_RESULT_TYPE_CLEARED, .cleared = c, .tspin = ts })
 #define STEP_RESULT_APPEARED(b) ((Step_result){ .t = STEP_RESULT_TYPE_APPEARED, .board = b })
 #define STEP_RESULT_GAMEOVER(b) ((Step_result){ .t = STEP_RESULT_TYPE_GAMEOVER, .board = b })
 

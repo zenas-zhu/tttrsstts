@@ -11,6 +11,7 @@ struct field_ {
 	int piece_o;
 	int ghost_r;
 	int cells[40][10];
+	bool tspin;
 };
 
 static bool field_piece_blocked(Field *field, int p, int r, int c, int o);
@@ -81,6 +82,7 @@ Step_result field_step(Field *field, Step step)
 							next_r = cur_r + kick_r;
 							next_c = cur_c + kick_c;
 							unkickable = false;
+							field->tspin = (field->piece_id == T_ID);
 							break;
 						}
 					}
@@ -89,6 +91,8 @@ Step_result field_step(Field *field, Step step)
 					result = STEP_RESULT_NOTHING;
 					break;
 				}
+			} else {
+				field->tspin = (step.t == STEP_TYPE_ROTATE && field->piece_id == T_ID);
 			}
 			// clear the active piece and ghost
 			field_minos_fill(field, field->piece_id, cur_r, cur_c, cur_o, 0);
@@ -152,7 +156,7 @@ Step_result field_step(Field *field, Step step)
 					src += 1;
 				}
 			}
-			result = STEP_RESULT_CLEARED(cleared);
+			result = STEP_RESULT_CLEARED(cleared, field->tspin);
 			break;
 		case STEP_TYPE_APPEAR:
 			if (field->piece_id != -1) {
@@ -179,6 +183,7 @@ Step_result field_step(Field *field, Step step)
 			field->piece_r = next_r;
 			field->piece_c = next_c;
 			field->piece_o = next_o;
+			field->tspin = false;
 			break;
 	}
 

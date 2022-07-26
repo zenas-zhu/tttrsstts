@@ -11,4 +11,6 @@ extern const int KICKS_IDS[];
 extern const int KICKS_SIZES[];
 extern const int *KICKS[];
 
+extern const int T_ID;
+
 #endif

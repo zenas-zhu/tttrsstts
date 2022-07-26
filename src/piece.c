@@ -110,3 +110,5 @@ const int *KICKS[] = {
 	KICKS_I,
 	(const int *)0, // no O kicks
 };
+
+const int T_ID = 5;

@@ -99,8 +99,8 @@ bool game_tick(Game *game, Inputs *inputs, Updates *updates)
 		field_step(game->field, STEP_LOCK);
 		Step_result r = field_step(game->field, STEP_CLEAR);
 		if (r.cleared > 4) r.cleared = 4;
-		char *actiontexts[] = { "", "single", "double", "triple", "four" };
-		updates->action = actiontexts[r.cleared];
+		char *actiontexts[] = { "", "single", "double", "triple", "four", "ts0", "tss", "tsd", "tst", "ts?" };
+		updates->action = actiontexts[r.cleared + (r.tspin ? 5 : 0)];
 		r = field_step(game->field, STEP_APPEAR(game_cycle_piece(game, updates)));
 		updates_flag_redraw(updates);
 		if (r.t == STEP_RESULT_TYPE_GAMEOVER) {
