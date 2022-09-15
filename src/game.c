@@ -3,7 +3,7 @@
 #include "field.h"
 #include "game.h"
 
-#define DROP_MILLIS 1000
+#define DROP_MICROS 1000000
 
 struct game_ {
 	Field *field;
@@ -38,69 +38,74 @@ void game_destroy(Game *game)
 
 bool game_init(Game *game, Updates *updates)
 {
-	Step_result r = field_step(game->field, STEP_APPEAR(game_cycle_piece(game, updates)));
-	updates->board = r.board;
 	updates->queue = game->queue;
 	updates->action = "";
 	game->hold = -1;
 	game->hold_avail = true;
 	updates->hold = -1;
-	game->drop_timer = DROP_MILLIS;
+
+	Step_result r = field_step(game->field, STEP_APPEAR(game_cycle_piece(game, updates)));
+	updates->board = r.board;
+	game->drop_timer = DROP_MICROS;
 	game->landed = false;
 	updates_flag_redraw(updates);
 	return true;
 }
 
+static bool checkstep(Field *field, Step step) {
+	Step_result r = field_step(field, step);
+	return (r.t == STEP_RESULT_TYPE_OK);
+}
+
+static char *lookup_clear_name(int cleared, bool tspin) {
+	if (!tspin) {
+		if (cleared > 5) cleared = 5;
+		char *actiontexts[] = { "", "single", "double", "triple", "four", "undefined" };
+		return actiontexts[cleared];
+	} else {
+		if (cleared > 4) cleared = 4;
+		char *actiontexts[] = { "ts0", "tss", "tsd", "tst", "undefined" };
+		return actiontexts[cleared];
+	}
+}
+
 bool game_tick(Game *game, Inputs *inputs, Updates *updates)
 {
-	game->drop_timer -= inputs_get_millis(inputs);
-	bool timedout = (game->drop_timer <= 0);
-	bool stallable = true;
-	Action action = inputs->action;
-	switch (action) {
-		case ACTION_LEFT:  field_step(game->field, STEP_MOVE(-1));  break;
-		case ACTION_RIGHT: field_step(game->field, STEP_MOVE(+1));  break;
-		case ACTION_CW:    field_step(game->field, STEP_ROTATE(1)); break;
-		case ACTION_180:   field_step(game->field, STEP_ROTATE(2)); break;
-		case ACTION_CCW:   field_step(game->field, STEP_ROTATE(3)); break;
-		default: stallable = false;
-	}
-	if (stallable && game->landed) { // move or rotate
-		// reset landed state
-		game->drop_timer = DROP_MILLIS;
+	game->drop_timer -= 16667;
+	// process hold if legal
+	if (inputs->keys & 1 << GAME_KEY_HOLD && game->hold_avail) {
+		game->hold_avail = false;
+		int cur_active = updates->curcolor;
+		int next_active = (game->hold != -1)
+		                  ? game->hold
+		                  : game_cycle_piece(game, updates);
+		game->hold = cur_active;
+		updates->hold = cur_active;
+		updates->curcolor = next_active;
+		updates_flag_redraw(updates);
+		field_step(game->field, STEP_APPEAR(next_active));
+		game->drop_timer = DROP_MICROS;
 		game->landed = false;
 	}
-	if (action == ACTION_HOLD) {
-		if (game->hold_avail) {
-			int cur_active = updates->curcolor;
-			int next_active = (game->hold != -1)
-			                  ? game->hold
-			                  : game_cycle_piece(game, updates);
-			game->hold = cur_active;
-			updates->hold = cur_active;
-			updates->curcolor = next_active;
-			updates_flag_redraw(updates);
-			field_step(game->field, STEP_APPEAR(next_active));
-			game->drop_timer = DROP_MILLIS;
-			game->landed = false;
-			game->hold_avail = false;
-		}
-	} else if (action == ACTION_SOFT_DROP) {
-		Step_result r = field_step(game->field, STEP_DOWN);
-		if (r.t == STEP_RESULT_TYPE_OK) {
-			game->drop_timer = DROP_MILLIS;
-		}
-	} else if (timedout && !game->landed) {
-		Step_result r = field_step(game->field, STEP_DOWN);
-		if (r.t == STEP_RESULT_TYPE_NOTHING) {
-			game->landed = true;
-		}
-	} else if (action == ACTION_HARD_DROP || (timedout && game->landed)) {
+	// process move/rotate
+	// if a move/rotate is performed successfully, we can stall piece landing
+	bool stallable = false;
+	stallable |= inputs->keys & (1 << GAME_KEY_LEFT)  && checkstep(game->field, STEP_MOVE(-1));
+	stallable |= inputs->keys & (1 << GAME_KEY_RIGHT) && checkstep(game->field, STEP_MOVE(+1));
+	stallable |= inputs->keys & (1 << GAME_KEY_CW)    && checkstep(game->field, STEP_ROTATE(1));
+	stallable |= inputs->keys & (1 << GAME_KEY_180)   && checkstep(game->field, STEP_ROTATE(2));
+	stallable |= inputs->keys & (1 << GAME_KEY_CCW)   && checkstep(game->field, STEP_ROTATE(3));
+	// stall piece landing
+	if (stallable && game->landed) {
+		game->drop_timer = DROP_MICROS;
+		game->landed = false;
+	}
+	bool timedout = (game->drop_timer <= 0);
+	if (inputs->keys & (1 << GAME_KEY_HARD_DROP) || (timedout && game->landed)) {
+		// lock piece and spawn a new one
 		field_step(game->field, STEP_LOCK);
 		Step_result r = field_step(game->field, STEP_CLEAR);
-		if (r.cleared > 4) r.cleared = 4;
-		char *actiontexts[] = { "", "single", "double", "triple", "four", "ts0", "tss", "tsd", "tst", "ts?" };
-		updates->action = actiontexts[r.cleared + (r.tspin ? 5 : 0)];
+		updates->action = lookup_clear_name(r.cleared, r.tspin);
 		r = field_step(game->field, STEP_APPEAR(game_cycle_piece(game, updates)));
 		updates_flag_redraw(updates);
 		if (r.t == STEP_RESULT_TYPE_GAMEOVER) {
@@ -108,11 +113,23 @@ bool game_tick(Game *game, Inputs *inputs, Updates *updates)
 		}
 		game->landed = false;
 		game->hold_avail = true;
+		game->drop_timer = DROP_MICROS;
+	} else if (timedout && !game->landed) {
+		// piece drops but is not locked yet
+		Step_result r = field_step(game->field, STEP_DOWN);
+		if (r.t == STEP_RESULT_TYPE_NOTHING) {
+			game->landed = true;
+		}
+		game->drop_timer = DROP_MICROS;
+	} else if (inputs->keys & (1 << GAME_KEY_SOFT_DROP)) {
+		if (!game->landed) {
+			// drop one tile now
+			Step_result r = field_step(game->field, STEP_DOWN);
+			if (r.t == STEP_RESULT_TYPE_OK) {
+				game->drop_timer = DROP_MICROS;
+			}
+		}
 	}
-	if (action == ACTION_HARD_DROP || timedout) {
-		game->drop_timer = DROP_MILLIS;
-	}
-	updates->timeout = game->drop_timer;
 	return true;
 }
 

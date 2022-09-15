@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 /*
- * actions that the client will be required to perform
+ * information that the client should display
  */
 typedef struct {
 	int *board; // handle to the board state
@@ -12,7 +12,6 @@ typedef struct {
 	int *queue; // handle to the next queue
 	int curcolor; // active piece color
 	bool redraw; // if hold/next queue need to be redrawn
-	long timeout; // max amount of time (ms) before the game should be polled again
 	char *action; // action text after line clear (e.g. "single")
 } Updates;
 

@@ -117,6 +117,10 @@ Step_result field_step(Field *field, Step step)
 				result = STEP_RESULT_NOTHING;
 				break;
 			}
+			// cancel the t-spin if the piece moved
+			if (cur_r != next_r) {
+				field->tspin = false;
+			}
 			// draw new piece right over the ghost piece
 			field_minos_fill(field, field->piece_id, cur_r, cur_c, cur_o, 0);
 			field_minos_fill(field, field->piece_id, next_r, next_c, next_o, 3 + field->piece_id);

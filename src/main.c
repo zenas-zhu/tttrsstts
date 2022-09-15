@@ -25,6 +25,7 @@ int main()
 	WINDOW *hwin = newwin(4, 8, 1, 0);
 	WINDOW *action = newwin(1, 22, 22, 8);
 	WINDOW *qwin = newwin(20, 8, 1, 31);
+	wtimeout(win, 0);
 	{
 		start_color();
 		use_default_colors();
@@ -50,7 +51,7 @@ int main()
 		wprintw(action, "%s", u->action);
 		wrefresh(action);
 		wrefresh(win);
-		wtimeout(win, u->timeout);
+		usleep(16667);
 		poll_kbd(win, p);
 		result = game_tick(g, p, u);
 	}
@@ -88,6 +89,9 @@ void draw_board(WINDOW *win, Updates *u)
 			wprintw(win, "  ");
 		}
 	}
+	// static int i = 0;
+	// wmove(win, 0, 0);
+	// wprintw(win, "%d", i++);
 }
 
 void draw_hold(WINDOW *hwin, Updates *u)
@@ -132,19 +136,22 @@ void draw_queue(WINDOW *qwin, Updates *u)
 
 void poll_kbd(WINDOW *win, Inputs *p)
 {
-	inputs_reset_millis(p);
+	p->keys = 0;
 	int key_raw = wgetch(win);
-	inputs_measure_millis(p);
-	Action a = ACTION_NONE;
-	switch (key_raw) {
-		case KEY_DOWN: a = ACTION_SOFT_DROP; break;
-		case KEY_UP: a = ACTION_HARD_DROP; break;
-		case KEY_LEFT: a = ACTION_LEFT; break;
-		case KEY_RIGHT: a = ACTION_RIGHT; break;
-		case 'o': a = ACTION_CCW; break;
-		case 'e': a = ACTION_180; break;
-		case 'u': a = ACTION_CW; break;
-		case 'a': a = ACTION_HOLD; break;
+	while (key_raw != -1) {
+		int key_index;
+		switch (key_raw) {
+			case KEY_LEFT: key_index = GAME_KEY_LEFT; break;
+			case KEY_RIGHT: key_index = GAME_KEY_RIGHT; break;
+			case KEY_DOWN: key_index = GAME_KEY_SOFT_DROP; break;
+			case KEY_UP: key_index = GAME_KEY_HARD_DROP; break;
+			case 'u': key_index = GAME_KEY_CW; break;
+			case 'o': key_index = GAME_KEY_CCW; break;
+			case 'e': key_index = GAME_KEY_180; break;
+			case 'a': key_index = GAME_KEY_HOLD; break;
+			default: continue;
+		}
+		p->keys |= 1 << key_index;
+		key_raw = wgetch(win);
 	}
-	p->action = a;
 }
