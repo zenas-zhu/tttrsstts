@@ -17,6 +17,7 @@ struct field_ {
 static bool field_piece_blocked(Field *field, int p, int r, int c, int o);
 static void field_minos_do(int p, int r, int c, int o, void (*cb)(int, int, void *), void *ctx);
 static void field_minos_fill(Field *field, int p, int r, int c, int o, int color);
+static bool field_tspin_con(Field *field);
 
 Field *field_create()
 {
@@ -48,7 +49,24 @@ Step_result field_step(Field *field, Step step)
 	{
 		case STEP_TYPE_DOWN: next_r -= 1; break;
 		case STEP_TYPE_MOVE: next_c += step.movedir; break;
-		case STEP_TYPE_ROTATE: next_o = (next_o + step.rotdir) % 4; break;
+		case STEP_TYPE_ROTATE:
+			next_o = (next_o + step.rotdir) % 4;
+			if (field_piece_blocked(field, field->piece_id, next_r, next_c, next_o)) {
+				int kicks_id = KICKS_IDS[field->piece_id];
+				int kicks_count = KICKS_SIZES[kicks_id];
+				int kicks_offset = ((step.rotdir - 1) * 4 + cur_o) * kicks_count * 2;
+				for (int i = 0; i < kicks_count; i++) {
+					int kick_r = KICKS[kicks_id][kicks_offset + i * 2 + 1];
+					int kick_c = KICKS[kicks_id][kicks_offset + i * 2 + 0];
+					if (!field_piece_blocked(field, field->piece_id, next_r + kick_r, next_c + kick_c, next_o)) {
+						next_r += kick_r;
+						next_c += kick_c;
+						break;
+					}
+				}
+				// if the rotate fails completely then (next_r, next_c, next_o) is still field_piece_blocked
+			}
+			break;
 		case STEP_TYPE_LOCK: next_r = field->ghost_r; break;
 		case STEP_TYPE_CLEAR: break;
 		case STEP_TYPE_APPEAR:
@@ -69,30 +87,8 @@ Step_result field_step(Field *field, Step step)
 				break;
 			}
 			if (field_piece_blocked(field, field->piece_id, next_r, next_c, next_o)) {
-				// attempt rotate with kick
-				bool unkickable = true;
-				if (step.t == STEP_TYPE_ROTATE) {
-					int kicks_id = KICKS_IDS[field->piece_id];
-					int kicks_count = KICKS_SIZES[kicks_id];
-					int kicks_offset = ((step.rotdir - 1) * 4 + cur_o) * kicks_count * 2;
-					for (int i = 0; i < kicks_count; i++) {
-						int kick_r = KICKS[kicks_id][kicks_offset + i * 2 + 1];
-						int kick_c = KICKS[kicks_id][kicks_offset + i * 2 + 0];
-						if (!field_piece_blocked(field, field->piece_id, cur_r + kick_r, cur_c + kick_c, next_o)) {
-							next_r = cur_r + kick_r;
-							next_c = cur_c + kick_c;
-							unkickable = false;
-							field->tspin = (field->piece_id == T_ID);
-							break;
-						}
-					}
-				}
-				if (unkickable) {
-					result = STEP_RESULT_NOTHING;
-					break;
-				}
-			} else {
-				field->tspin = (step.t == STEP_TYPE_ROTATE && field->piece_id == T_ID);
+				result = STEP_RESULT_NOTHING;
+				break;
 			}
 			// clear the active piece and ghost
 			field_minos_fill(field, field->piece_id, cur_r, cur_c, cur_o, 0);
@@ -107,6 +103,7 @@ Step_result field_step(Field *field, Step step)
 			field->piece_r = next_r;
 			field->piece_c = next_c;
 			field->piece_o = next_o;
+			field->tspin = (step.t == STEP_TYPE_ROTATE && field_tspin_con(field));
 			// draw new active piece and ghost
 			field_minos_fill(field, field->piece_id, field->ghost_r, next_c, next_o, 2);
 			field_minos_fill(field, field->piece_id, next_r, next_c, next_o, 1);
@@ -193,6 +190,16 @@ Step_result field_step(Field *field, Step step)
 
 	return result;
 
+}
+
+static bool field_tspin_con(Field *field)
+{
+	int corners_filled = 0;
+	corners_filled += (field->cells[field->piece_r][field->piece_c] != 0) ? 1 : 0;
+	corners_filled += (field->cells[field->piece_r][field->piece_c+2] != 0) ? 1 : 0;
+	corners_filled += (field->cells[field->piece_r+2][field->piece_c] != 0) ? 1 : 0;
+	corners_filled += (field->cells[field->piece_r+2][field->piece_c+2] != 0) ? 1 : 0;
+	return corners_filled >= 3;
 }
 
 struct checkblock_ctx { Field *f; bool blocked; };
