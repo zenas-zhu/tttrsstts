@@ -1,7 +1,5 @@
 #include "piece.h"
 
-const int PIECES_SIZE = 7;
-
 #define _ false,
 #define O true,
 static const bool PIECE_I[] = {
@@ -58,6 +56,10 @@ const int PIECE_SIZES[] = {
 
 const int PIECE_COLORS[] = {
 	44, 62, 172, 185, 40, 170, 167,
+};
+
+const int PIECE_COLORS_RGB[] = {
+	0x0F9BD7, 0x2141C6, 0xE35B02, 0xE39F02, 0x59B101, 0xAF298A, 0xD70F37
 };
 
 const int KICKS_IDS[] = {

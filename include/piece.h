@@ -3,10 +3,11 @@
 
 #include <stdbool.h>
 
-extern const int PIECES_SIZE;
+#define PIECES_SIZE 7
 extern const bool *PIECES[];
 extern const int PIECE_SIZES[];
 extern const int PIECE_COLORS[];
+extern const int PIECE_COLORS_RGB[];
 extern const int KICKS_IDS[];
 extern const int KICKS_SIZES[];
 extern const int *KICKS[];
