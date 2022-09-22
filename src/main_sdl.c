@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <SDL.h>
 #include "game.h"
 #include "piece.h"
@@ -7,11 +8,13 @@
 int main()
 {
 
+	srand(time(NULL));
+
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
 		fprintf(stderr, "init SDL: %s\n", SDL_GetError());
 		exit(1);
 	}
-	SDL_Window *window = SDL_CreateWindow("tttrsstts", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 160, 320, SDL_WINDOW_SHOWN);
+	SDL_Window *window = SDL_CreateWindow("tttrsstts", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 320, 320, SDL_WINDOW_SHOWN);
 	if (window == NULL) {
 		fprintf(stderr, "create window: %s\n", SDL_GetError());
 		exit(1);
@@ -51,8 +54,20 @@ int main()
 	SDL_Rect *cell_rects = malloc(sizeof(SDL_Rect) * 200); // 3.2 kb it's probably fine
 	for (int i = 0; i < 200; i++) {
 		int x = i % 10, y = 20 - 1 - i / 10;
-		cell_rects[i] = (SDL_Rect){ .x = x * 16, .y = y * 16, .w = 16, .h = 16 };
+		cell_rects[i] = (SDL_Rect){ .x = x * 16 + 80, .y = y * 16, .w = 16, .h = 16 };
 	}
+
+	SDL_Rect *hold_rects = malloc(sizeof(SDL_Rect) * 16);
+	for (int i = 0; i < 16; i++) {
+		int x = i % 4, y = i / 4;
+		hold_rects[i] = (SDL_Rect){ .x = x * 16, .y = y * 16, .w = 16, .h = 16 };
+	}
+	SDL_Rect *queue_rects = malloc(sizeof(SDL_Rect) * 80);
+	for (int i = 0; i < 80; i++) {
+		int x = i % 4, y = i / 4;
+		queue_rects[i] = (SDL_Rect){ .x = x * 16 + 256, .y = y * 16, .w = 16, .h = 16 };
+	}
+
 
 	Updates *u = updates_create();
 	Inputs *p = inputs_create();
@@ -62,6 +77,7 @@ int main()
 
 	SDL_Event e;
 	while (result) {
+
 		bool stop = false;
 		while (SDL_PollEvent(&e)) {
 			if (e.type == SDL_QUIT) {
@@ -92,10 +108,35 @@ int main()
 				SDL_RenderCopy(renderer, textures_piece[cell - 3], &rect, &cell_rects[i]);
 			}
 		}
+		if (u->hold != -1) {
+			int size = PIECE_SIZES[u->hold];
+			int offsetx = (5 - size) / 2;
+			int offsety = (5 - size) / 2;
+			for (int j = 0; j < size * size; j++) {
+				if (PIECES[u->hold][j]) {
+					SDL_RenderCopy(renderer, textures_piece[u->hold], &rect, &hold_rects[(j / size + offsety) * 4 + (j % size + offsetx)]);
+				}
+			}
+		}
+		for (int i = 0; i < 5; i++) {
+			int size = PIECE_SIZES[u->queue[i]];
+			int offsetx = (4 - size) / 2;
+			int offsety = (5 - size) / 2;
+			for (int j = 0; j < size * size; j++) {
+				if (PIECES[u->queue[i]][j]) {
+					SDL_RenderCopy(renderer, textures_piece[u->queue[i]], &rect, &queue_rects[(i * 4 + j / size + offsety) * 4 + (j % size + offsetx)]);
+				}
+			}
+		}
+		SDL_SetRenderDrawColor(renderer, 128, 128, 128, SDL_ALPHA_OPAQUE);
+		SDL_RenderFillRect(renderer, &(SDL_Rect){ .x = 78, .y = 0, .w = 2, .h = 320 });
+		SDL_RenderFillRect(renderer, &(SDL_Rect){ .x = 240, .y = 0, .w = 2, .h = 320 });
 		SDL_RenderPresent(renderer);
 	}
 
 	free(cell_rects);
+	free(hold_rects);
+	free(queue_rects);
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 	SDL_Quit();

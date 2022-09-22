@@ -8,6 +8,7 @@
 struct game_ {
 	Field *field;
 	int drop_timer;
+	int last_keys;
 	bool landed;
 	int hold;
 	bool hold_avail;
@@ -49,6 +50,7 @@ bool game_init(Game *game, Updates *updates)
 	game->drop_timer = DROP_MICROS;
 	game->landed = false;
 	updates_flag_redraw(updates);
+	game->last_keys = 0;
 	return true;
 }
 
@@ -72,8 +74,9 @@ static char *lookup_clear_name(int cleared, bool tspin) {
 bool game_tick(Game *game, Inputs *inputs, Updates *updates)
 {
 	game->drop_timer -= 16667;
+	int new_keys = inputs->keys & ~game->last_keys;
 	// process hold if legal
-	if (inputs->keys & 1 << GAME_KEY_HOLD && game->hold_avail) {
+	if (new_keys & 1 << GAME_KEY_HOLD && game->hold_avail) {
 		game->hold_avail = false;
 		int cur_active = updates->curcolor;
 		int next_active = (game->hold != -1)
@@ -90,18 +93,18 @@ bool game_tick(Game *game, Inputs *inputs, Updates *updates)
 	// process move/rotate
 	// if a move/rotate is performed successfully, we can stall piece landing
 	bool stallable = false;
-	stallable |= inputs->keys & (1 << GAME_KEY_LEFT)  && checkstep(game->field, STEP_MOVE(-1));
-	stallable |= inputs->keys & (1 << GAME_KEY_RIGHT) && checkstep(game->field, STEP_MOVE(+1));
-	stallable |= inputs->keys & (1 << GAME_KEY_CW)    && checkstep(game->field, STEP_ROTATE(1));
-	stallable |= inputs->keys & (1 << GAME_KEY_180)   && checkstep(game->field, STEP_ROTATE(2));
-	stallable |= inputs->keys & (1 << GAME_KEY_CCW)   && checkstep(game->field, STEP_ROTATE(3));
+	stallable |= new_keys & (1 << GAME_KEY_LEFT)  && checkstep(game->field, STEP_MOVE(-1));
+	stallable |= new_keys & (1 << GAME_KEY_RIGHT) && checkstep(game->field, STEP_MOVE(+1));
+	stallable |= new_keys & (1 << GAME_KEY_CW)    && checkstep(game->field, STEP_ROTATE(1));
+	stallable |= new_keys & (1 << GAME_KEY_180)   && checkstep(game->field, STEP_ROTATE(2));
+	stallable |= new_keys & (1 << GAME_KEY_CCW)   && checkstep(game->field, STEP_ROTATE(3));
 	// stall piece landing
 	if (stallable && game->landed) {
 		game->drop_timer = DROP_MICROS;
 		game->landed = false;
 	}
 	bool timedout = (game->drop_timer <= 0);
-	if (inputs->keys & (1 << GAME_KEY_HARD_DROP) || (timedout && game->landed)) {
+	if (new_keys & (1 << GAME_KEY_HARD_DROP) || (timedout && game->landed)) {
 		// lock piece and spawn a new one
 		field_step(game->field, STEP_LOCK);
 		Step_result r = field_step(game->field, STEP_CLEAR);
@@ -130,6 +133,7 @@ bool game_tick(Game *game, Inputs *inputs, Updates *updates)
 			}
 		}
 	}
+	game->last_keys = inputs->keys;
 	return true;
 }
 
