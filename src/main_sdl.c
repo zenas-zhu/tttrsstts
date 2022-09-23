@@ -51,12 +51,11 @@ int main()
 	}
 	SDL_SetRenderTarget(renderer, NULL);
 
-	SDL_Rect *cell_rects = malloc(sizeof(SDL_Rect) * 200); // 3.2 kb it's probably fine
+	SDL_Rect *cell_rects = malloc(sizeof(SDL_Rect) * 200);
 	for (int i = 0; i < 200; i++) {
 		int x = i % 10, y = 20 - 1 - i / 10;
 		cell_rects[i] = (SDL_Rect){ .x = x * 16 + 80, .y = y * 16, .w = 16, .h = 16 };
 	}
-
 	SDL_Rect *hold_rects = malloc(sizeof(SDL_Rect) * 16);
 	for (int i = 0; i < 16; i++) {
 		int x = i % 4, y = i / 4;
@@ -128,6 +127,7 @@ int main()
 				}
 			}
 		}
+
 		SDL_SetRenderDrawColor(renderer, 128, 128, 128, SDL_ALPHA_OPAQUE);
 		SDL_RenderFillRect(renderer, &(SDL_Rect){ .x = 78, .y = 0, .w = 2, .h = 320 });
 		SDL_RenderFillRect(renderer, &(SDL_Rect){ .x = 240, .y = 0, .w = 2, .h = 320 });

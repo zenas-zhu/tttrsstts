@@ -3,12 +3,16 @@
 #include "field.h"
 #include "game.h"
 
+#define DAS_MICROS 150000
+#define ARR_MICROS 10000
 #define DROP_MICROS 1000000
 
 struct game_ {
 	Field *field;
 	int drop_timer;
+	int das_timer;
 	int last_keys;
+	int das_dir;
 	bool landed;
 	int hold;
 	bool hold_avail;
@@ -17,6 +21,7 @@ struct game_ {
 	int queue[5];
 };
 
+static bool game_das(Game *game, int keys);
 static int game_cycle_piece(Game *game, Updates *updates);
 static int game_gen_piece(Game *game);
 
@@ -93,8 +98,7 @@ bool game_tick(Game *game, Inputs *inputs, Updates *updates)
 	// process move/rotate
 	// if a move/rotate is performed successfully, we can stall piece landing
 	bool stallable = false;
-	stallable |= new_keys & (1 << GAME_KEY_LEFT)  && checkstep(game->field, STEP_MOVE(-1));
-	stallable |= new_keys & (1 << GAME_KEY_RIGHT) && checkstep(game->field, STEP_MOVE(+1));
+	stallable |= game_das(game, inputs->keys);
 	stallable |= new_keys & (1 << GAME_KEY_CW)    && checkstep(game->field, STEP_ROTATE(1));
 	stallable |= new_keys & (1 << GAME_KEY_180)   && checkstep(game->field, STEP_ROTATE(2));
 	stallable |= new_keys & (1 << GAME_KEY_CCW)   && checkstep(game->field, STEP_ROTATE(3));
@@ -135,6 +139,48 @@ bool game_tick(Game *game, Inputs *inputs, Updates *updates)
 	}
 	game->last_keys = inputs->keys;
 	return true;
+}
+
+static bool game_das(Game *game, int keys)
+{
+	int keys_down = keys & ~game->last_keys;
+	int keys_up = game->last_keys & ~keys;
+	int press_left = keys_down & (1 << GAME_KEY_LEFT), press_right = keys_down & (1 << GAME_KEY_RIGHT);
+	int held_left = keys & (1 << GAME_KEY_LEFT), held_right = keys & (1 << GAME_KEY_RIGHT);
+	int release_left = keys_up & (1 << GAME_KEY_LEFT), release_right = keys_up & (1 << GAME_KEY_RIGHT);
+	bool stallable = false;
+	if (press_left || press_right) {
+		// start charging das
+		game->das_timer = DAS_MICROS;
+		if (press_right) {
+			game->das_dir = +1;
+			stallable = checkstep(game->field, STEP_MOVE(+1));
+		} else {
+			game->das_dir = -1;
+			stallable = checkstep(game->field, STEP_MOVE(-1));
+		}
+	}
+	if (held_left || held_right) {
+		if (release_left) {
+			game->das_timer = DAS_MICROS;
+			game->das_dir = +1;
+		}
+		if (release_right) {
+			game->das_timer = DAS_MICROS;
+			game->das_dir = -1;
+		}
+		game->das_timer -= 16667;
+		while (game->das_timer <= 0) {
+			Step_result r = field_step(game->field, STEP_MOVE(game->das_dir));
+			if (r.t != STEP_RESULT_TYPE_OK) {
+				game->das_timer = ARR_MICROS;
+				break;
+			}
+			stallable = true;
+			game->das_timer += ARR_MICROS;
+		}
+	}
+	return stallable;
 }
 
 static int game_cycle_piece(Game *game, Updates *updates)
