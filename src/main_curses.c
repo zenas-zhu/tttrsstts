@@ -145,9 +145,9 @@ void poll_kbd(WINDOW *win, Inputs *p)
 			case KEY_RIGHT: key_index = GAME_KEY_RIGHT; break;
 			case KEY_DOWN: key_index = GAME_KEY_SOFT_DROP; break;
 			case KEY_UP: key_index = GAME_KEY_HARD_DROP; break;
-			case 'u': key_index = GAME_KEY_CW; break;
-			case 'o': key_index = GAME_KEY_CCW; break;
-			case 'e': key_index = GAME_KEY_180; break;
+			case 'f': key_index = GAME_KEY_CW; break;
+			case 's': key_index = GAME_KEY_CCW; break;
+			case 'd': key_index = GAME_KEY_180; break;
 			case 'a': key_index = GAME_KEY_HOLD; break;
 			default: continue;
 		}
