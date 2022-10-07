@@ -12,8 +12,8 @@ add_executable(main_curses src/main_curses.c)
 add_executable(main_sdl src/main_sdl.c)
 
 include_directories(include)
-target_include_directories(main_curses PRIVATE ${CURSES_INCLUDE_DIR})
-target_include_directories(main_sdl PRIVATE ${SDL2_INCLUDE_DIR})
+target_include_directories(main_curses PRIVATE ${CURSES_INCLUDE_DIRS})
+target_include_directories(main_sdl PRIVATE ${SDL2_INCLUDE_DIRS})
 
 target_link_libraries(main_curses tttrsstts)
 target_link_libraries(main_sdl tttrsstts)
